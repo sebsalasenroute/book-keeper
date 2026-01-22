@@ -701,35 +701,81 @@ const UploadCenter = ({ currentClient }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState(MOCK_DOCUMENTS);
+  const fileInputRef = useRef(null);
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setDragActive(false);
-    // Simulate upload
+  const getFileType = (fileName) => {
+    const ext = fileName.split('.').pop().toLowerCase();
+    if (['pdf'].includes(ext)) return 'Bank Statement';
+    if (['jpg', 'jpeg', 'png'].includes(ext)) return 'Receipt';
+    if (['xlsx', 'xls', 'csv'].includes(ext)) return 'Spreadsheet';
+    return 'Document';
+  };
+
+  const processFiles = useCallback((files) => {
+    if (!currentClient) return;
+
+    const fileArray = Array.from(files);
+    const newUploads = fileArray.map(file => ({
+      name: file.name,
+      size: file.size,
+      progress: 0,
+      status: 'uploading',
+      type: 'detecting...'
+    }));
+
     setUploading(true);
-    setUploadProgress([
-      { name: 'statement-jan-2024.pdf', progress: 0, status: 'uploading', type: 'detecting...' },
-      { name: 'receipts-batch.zip', progress: 0, status: 'uploading', type: 'detecting...' },
-    ]);
-    
-    // Simulate progress
+    setUploadProgress(newUploads);
+
+    // Simulate progress for each file
     let progress = 0;
     const interval = setInterval(() => {
       progress += 10;
-      setUploadProgress(prev => prev.map(f => ({ 
-        ...f, 
+      setUploadProgress(prev => prev.map(f => ({
+        ...f,
         progress: Math.min(progress, 100),
         status: progress >= 100 ? 'processing' : 'uploading',
-        type: progress >= 50 ? 'Bank Statement' : 'detecting...'
+        type: progress >= 50 ? getFileType(f.name) : 'detecting...'
       })));
       if (progress >= 100) {
         clearInterval(interval);
         setTimeout(() => {
           setUploadProgress(prev => prev.map(f => ({ ...f, status: 'complete' })));
+          // Add to uploaded documents list
+          const newDocs = fileArray.map((file, idx) => ({
+            id: Date.now() + idx,
+            name: file.name,
+            type: getFileType(file.name),
+            status: 'processed',
+            pages: Math.floor(Math.random() * 10) + 1,
+            transactions: Math.floor(Math.random() * 50) + 1,
+            uploadedAt: new Date().toLocaleString()
+          }));
+          setUploadedDocuments(prev => [...newDocs, ...prev]);
         }, 1500);
       }
     }, 200);
-  }, []);
+  }, [currentClient]);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
+    }
+  }, [processFiles]);
+
+  const handleFileInput = useCallback((e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      processFiles(e.target.files);
+    }
+  }, [processFiles]);
+
+  const handleClick = () => {
+    if (currentClient && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   return (
     <div className="upload-view">
@@ -742,12 +788,21 @@ const UploadCenter = ({ currentClient }) => {
         </div>
       </div>
 
-      <div 
+      <div
         className={`upload-zone ${dragActive ? 'active' : ''} ${!currentClient ? 'disabled' : ''}`}
         onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
         onDragLeave={() => setDragActive(false)}
         onDrop={handleDrop}
+        onClick={handleClick}
       >
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.csv,.xlsx,.xls,.jpg,.jpeg,.png"
+          onChange={handleFileInput}
+          style={{ display: 'none' }}
+        />
         <div className="upload-zone-content">
           <div className="upload-icon">
             <Upload size={48} />
@@ -791,7 +846,7 @@ const UploadCenter = ({ currentClient }) => {
       <div className="recent-uploads-section">
         <h3>Recent Uploads</h3>
         <div className="documents-grid">
-          {MOCK_DOCUMENTS.map(doc => (
+          {uploadedDocuments.map(doc => (
             <div key={doc.id} className="document-card">
               <div className={`doc-icon ${doc.type.toLowerCase().replace(' ', '-')}`}>
                 {doc.type === 'Bank Statement' && <Banknote size={24} />}
@@ -825,26 +880,54 @@ const UploadCenter = ({ currentClient }) => {
 // ============================================================================
 
 const TransactionReview = ({ currentClient }) => {
+  const [transactions, setTransactions] = useState(MOCK_TRANSACTIONS);
   const [selectedTransaction, setSelectedTransaction] = useState(MOCK_TRANSACTIONS[0]);
   const [filter, setFilter] = useState('pending');
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [bulkSelected, setBulkSelected] = useState([]);
 
-  const filteredTransactions = MOCK_TRANSACTIONS.filter(t => {
+  const filteredTransactions = transactions.filter(t => {
     if (filter === 'pending') return t.status === 'pending';
     if (filter === 'approved') return t.status === 'approved';
     if (filter === 'flagged') return t.flags.length > 0;
     return true;
   });
 
+  const pendingCount = transactions.filter(t => t.status === 'pending').length;
+  const approvedCount = transactions.filter(t => t.status === 'approved').length;
+  const flaggedCount = transactions.filter(t => t.flags.length > 0).length;
+
   const handleApprove = (txn) => {
-    // In real app, would update state
-    console.log('Approved:', txn.id);
+    setTransactions(prev => prev.map(t =>
+      t.id === txn.id ? { ...t, status: 'approved' } : t
+    ));
+    // Update selected transaction if it's the one being approved
+    if (selectedTransaction?.id === txn.id) {
+      setSelectedTransaction(prev => ({ ...prev, status: 'approved' }));
+    }
+  };
+
+  const handleReject = (txn) => {
+    setTransactions(prev => prev.map(t =>
+      t.id === txn.id ? { ...t, status: 'rejected' } : t
+    ));
   };
 
   const handleBulkApprove = () => {
-    bulkSelected.forEach(id => handleApprove({ id }));
+    setTransactions(prev => prev.map(t =>
+      bulkSelected.includes(t.id) ? { ...t, status: 'approved' } : t
+    ));
     setBulkSelected([]);
+  };
+
+  const handleCategoryChange = (categoryCode) => {
+    if (!selectedTransaction) return;
+
+    setTransactions(prev => prev.map(t =>
+      t.id === selectedTransaction.id ? { ...t, suggestedCategory: categoryCode, confidence: 1.0 } : t
+    ));
+    setSelectedTransaction(prev => ({ ...prev, suggestedCategory: categoryCode, confidence: 1.0 }));
+    setCategoryPickerOpen(false);
   };
 
   return (
@@ -903,15 +986,15 @@ const TransactionReview = ({ currentClient }) => {
           <div className="panel-header">
             <div className="filter-tabs">
               {['all', 'pending', 'approved', 'flagged'].map(f => (
-                <button 
+                <button
                   key={f}
                   className={`filter-tab ${filter === f ? 'active' : ''}`}
                   onClick={() => setFilter(f)}
                 >
-                  {f === 'all' && 'All'}
-                  {f === 'pending' && <>Pending <span className="count">5</span></>}
-                  {f === 'approved' && <>Approved <span className="count">5</span></>}
-                  {f === 'flagged' && <>Flagged <span className="count">4</span></>}
+                  {f === 'all' && `All (${transactions.length})`}
+                  {f === 'pending' && <>Pending <span className="count">{pendingCount}</span></>}
+                  {f === 'approved' && <>Approved <span className="count">{approvedCount}</span></>}
+                  {f === 'flagged' && <>Flagged <span className="count">{flaggedCount}</span></>}
                 </button>
               ))}
             </div>
@@ -979,12 +1062,14 @@ const TransactionReview = ({ currentClient }) => {
                       <button className="approve-btn" onClick={(e) => { e.stopPropagation(); handleApprove(txn); }}>
                         <Check size={16} />
                       </button>
-                      <button className="reject-btn" onClick={(e) => e.stopPropagation()}>
+                      <button className="reject-btn" onClick={(e) => { e.stopPropagation(); handleReject(txn); }}>
                         <X size={16} />
                       </button>
                     </>
-                  ) : (
+                  ) : txn.status === 'approved' ? (
                     <CheckCircle2 size={18} className="approved-icon" />
+                  ) : (
+                    <XCircle size={18} className="rejected-icon" style={{ color: 'var(--accent-error)' }} />
                   )}
                 </div>
               </div>
@@ -1128,11 +1213,15 @@ const TransactionReview = ({ currentClient }) => {
               )}
 
               <div className="ai-actions">
-                <button className="action-btn primary">
+                <button
+                  className="action-btn primary"
+                  onClick={() => handleApprove(selectedTransaction)}
+                  disabled={selectedTransaction?.status === 'approved'}
+                >
                   <Check size={16} />
-                  Approve Category
+                  {selectedTransaction?.status === 'approved' ? 'Approved' : 'Approve Category'}
                 </button>
-                <button className="action-btn secondary">
+                <button className="action-btn secondary" onClick={() => setCategoryPickerOpen(true)}>
                   <Edit3 size={16} />
                   Change Category
                 </button>
@@ -1172,7 +1261,11 @@ const TransactionReview = ({ currentClient }) => {
               <div className="category-group">
                 <h4>Income</h4>
                 {Object.entries(CRA_CATEGORIES.income).map(([code, cat]) => (
-                  <button key={code} className="category-option">
+                  <button
+                    key={code}
+                    className={`category-option ${selectedTransaction?.suggestedCategory === code ? 'selected' : ''}`}
+                    onClick={() => handleCategoryChange(code)}
+                  >
                     <span className="cat-name">{cat.name}</span>
                     <span className="cat-code">{cat.code}</span>
                   </button>
@@ -1181,7 +1274,11 @@ const TransactionReview = ({ currentClient }) => {
               <div className="category-group">
                 <h4>Expenses</h4>
                 {Object.entries(CRA_CATEGORIES.expenses).map(([code, cat]) => (
-                  <button key={code} className="category-option">
+                  <button
+                    key={code}
+                    className={`category-option ${selectedTransaction?.suggestedCategory === code ? 'selected' : ''}`}
+                    onClick={() => handleCategoryChange(code)}
+                  >
                     <span className="cat-name">{cat.name}</span>
                     <span className="cat-code">{cat.code}</span>
                     {cat.limit && <span className="cat-limit">{cat.limit}</span>}
@@ -1191,7 +1288,33 @@ const TransactionReview = ({ currentClient }) => {
               <div className="category-group">
                 <h4>Transfers</h4>
                 {Object.entries(CRA_CATEGORIES.transfer).map(([code, cat]) => (
-                  <button key={code} className="category-option">
+                  <button
+                    key={code}
+                    className={`category-option ${selectedTransaction?.suggestedCategory === code ? 'selected' : ''}`}
+                    onClick={() => handleCategoryChange(code)}
+                  >
+                    <span className="cat-name">{cat.name}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="category-group">
+                <h4>Personal / Excluded</h4>
+                {Object.entries(CRA_CATEGORIES.personal).map(([code, cat]) => (
+                  <button
+                    key={code}
+                    className={`category-option ${selectedTransaction?.suggestedCategory === code ? 'selected' : ''}`}
+                    onClick={() => handleCategoryChange(code)}
+                  >
+                    <span className="cat-name">{cat.name}</span>
+                    <span className="cat-code">{cat.code}</span>
+                  </button>
+                ))}
+                {Object.entries(CRA_CATEGORIES.excluded).map(([code, cat]) => (
+                  <button
+                    key={code}
+                    className={`category-option ${selectedTransaction?.suggestedCategory === code ? 'selected' : ''}`}
+                    onClick={() => handleCategoryChange(code)}
+                  >
                     <span className="cat-name">{cat.name}</span>
                   </button>
                 ))}
