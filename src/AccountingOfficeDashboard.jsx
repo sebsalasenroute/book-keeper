@@ -73,77 +73,19 @@ const CRA_CATEGORIES = {
 // ============================================================================
 
 const MOCK_CLIENTS = [
-  { 
-    id: 1, 
-    name: 'Sarah Chen', 
-    type: 'Individual', 
+  {
+    id: 1,
+    name: 'Sarah Chen',
+    type: 'Individual',
     status: 'needs_review',
     province: 'BC',
     taxYears: [2024, 2023, 2022],
     gstRegistered: false,
     lastUpload: '2024-01-15',
-    pendingItems: 12,
+    pendingItems: 1,
     totalIncome: 142500,
     totalExpenses: 34200,
     engagement: 'T1 Personal'
-  },
-  { 
-    id: 2, 
-    name: 'TechFlow Solutions Inc.', 
-    type: 'Corporation', 
-    status: 'needs_client',
-    province: 'ON',
-    taxYears: [2024, 2023],
-    gstRegistered: true,
-    yearEnd: 'Dec 31',
-    lastUpload: '2024-01-12',
-    pendingItems: 45,
-    totalIncome: 890000,
-    totalExpenses: 620000,
-    engagement: 'T2 Corporate + HST'
-  },
-  { 
-    id: 3, 
-    name: 'Michael Rodriguez', 
-    type: 'Individual', 
-    status: 'ready_report',
-    province: 'AB',
-    taxYears: [2024],
-    gstRegistered: true,
-    lastUpload: '2024-01-10',
-    pendingItems: 0,
-    totalIncome: 95000,
-    totalExpenses: 22400,
-    engagement: 'T1 + T2125 Self-Employed'
-  },
-  { 
-    id: 4, 
-    name: 'Maple Leaf Properties', 
-    type: 'Corporation', 
-    status: 'filed',
-    province: 'BC',
-    taxYears: [2024, 2023, 2022],
-    gstRegistered: true,
-    yearEnd: 'Mar 31',
-    lastUpload: '2023-12-20',
-    pendingItems: 0,
-    totalIncome: 340000,
-    totalExpenses: 210000,
-    engagement: 'T2 Corporate'
-  },
-  { 
-    id: 5, 
-    name: 'Jennifer Walsh', 
-    type: 'Individual', 
-    status: 'needs_review',
-    province: 'ON',
-    taxYears: [2024],
-    gstRegistered: false,
-    lastUpload: '2024-01-18',
-    pendingItems: 28,
-    totalIncome: 78000,
-    totalExpenses: 15600,
-    engagement: 'T1 Personal + Rental'
   }
 ];
 
@@ -165,186 +107,15 @@ const MOCK_TRANSACTIONS = [
     gstHst: 5.94,
     sourceDoc: 'td-visa-jan-2024.pdf',
     sourcePage: 2
-  },
-  {
-    id: 2,
-    date: '2024-01-14',
-    description: 'AMAZON.CA *2K8MN1',
-    originalDescription: 'AMAZON.CA *2K8MN1 AMZN.CA/BI',
-    merchant: 'Amazon',
-    amount: -234.99,
-    currency: 'CAD',
-    account: 'TD Business Visa ****4521',
-    suggestedCategory: 'EXP-OFFICE',
-    confidence: 0.78,
-    rationale: 'Amazon purchase - likely office supplies or equipment. Review receipt for exact items.',
-    status: 'pending',
-    flags: ['needs_receipt', 'mixed_use_possible'],
-    gstHst: 30.55,
-    sourceDoc: 'td-visa-jan-2024.pdf',
-    sourcePage: 2
-  },
-  {
-    id: 3,
-    date: '2024-01-13',
-    description: 'STRIPE TRANSFER',
-    originalDescription: 'STRIPE PAYOUT - TechFlow Sol',
-    merchant: 'Stripe',
-    amount: 4250.00,
-    currency: 'CAD',
-    account: 'TD Business Chequing ****8832',
-    suggestedCategory: 'INC-SE',
-    confidence: 0.98,
-    rationale: 'Payment processor deposit - business revenue from online sales or services.',
-    status: 'approved',
-    flags: [],
-    gstHst: null,
-    sourceDoc: 'td-chequing-jan-2024.pdf',
-    sourcePage: 1
-  },
-  {
-    id: 4,
-    date: '2024-01-12',
-    description: 'SHELL OIL 12345',
-    originalDescription: 'SHELL 12345 VANCOUVER BC',
-    merchant: 'Shell',
-    amount: -89.45,
-    currency: 'CAD',
-    account: 'TD Business Visa ****4521',
-    suggestedCategory: 'EXP-FUEL',
-    confidence: 0.95,
-    rationale: 'Gas station - vehicle fuel expense. Requires km log for business use percentage.',
-    status: 'pending',
-    flags: ['needs_km_log'],
-    gstHst: 11.63,
-    sourceDoc: 'td-visa-jan-2024.pdf',
-    sourcePage: 3,
-    prompt: 'What is the business use % for this vehicle?'
-  },
-  {
-    id: 5,
-    date: '2024-01-11',
-    description: 'TRANSFER TO SAVINGS',
-    originalDescription: 'TFR TO SAV ****9921',
-    merchant: null,
-    amount: -5000.00,
-    currency: 'CAD',
-    account: 'TD Business Chequing ****8832',
-    suggestedCategory: 'TRF-INT',
-    confidence: 0.99,
-    rationale: 'Internal account transfer - not a taxable event.',
-    status: 'approved',
-    flags: [],
-    gstHst: null,
-    sourceDoc: 'td-chequing-jan-2024.pdf',
-    sourcePage: 1
-  },
-  {
-    id: 6,
-    date: '2024-01-10',
-    description: 'GOOGLE *ADS',
-    originalDescription: 'GOOGLE *ADS CAN CC@GOOGLE',
-    merchant: 'Google Ads',
-    amount: -750.00,
-    currency: 'CAD',
-    account: 'TD Business Visa ****4521',
-    suggestedCategory: 'EXP-ADV',
-    confidence: 0.99,
-    rationale: 'Digital advertising expense - fully deductible.',
-    status: 'approved',
-    flags: [],
-    gstHst: 97.50,
-    sourceDoc: 'td-visa-jan-2024.pdf',
-    sourcePage: 3
-  },
-  {
-    id: 7,
-    date: '2024-01-09',
-    description: 'SHOPPERS DRUG MART',
-    originalDescription: 'SHOPPERS #1234 VANCOUVER',
-    merchant: 'Shoppers Drug Mart',
-    amount: -67.89,
-    currency: 'CAD',
-    account: 'TD Business Visa ****4521',
-    suggestedCategory: 'EXP-OTH',
-    confidence: 0.45,
-    rationale: 'Pharmacy/retail - could be personal or business supplies. Needs receipt review.',
-    status: 'pending',
-    flags: ['low_confidence', 'needs_receipt', 'mixed_use_possible'],
-    gstHst: 8.83,
-    sourceDoc: 'td-visa-jan-2024.pdf',
-    sourcePage: 4
-  },
-  {
-    id: 8,
-    date: '2024-01-08',
-    description: 'MONTHLY RENT - OFFICE',
-    originalDescription: 'E-TRANSFER RENT JAN 2024',
-    merchant: 'Landlord - 123 Main St',
-    amount: -2200.00,
-    currency: 'CAD',
-    account: 'TD Business Chequing ****8832',
-    suggestedCategory: 'EXP-RENT',
-    confidence: 0.97,
-    rationale: 'Recurring monthly payment - office rent based on memo and amount pattern.',
-    status: 'approved',
-    flags: [],
-    gstHst: null,
-    sourceDoc: 'td-chequing-jan-2024.pdf',
-    sourcePage: 2
-  },
-  {
-    id: 9,
-    date: '2024-01-07',
-    description: 'CLIENT PAYMENT - ACME CORP',
-    originalDescription: 'EFT CR ACME CORP INV-2024-001',
-    merchant: 'Acme Corp',
-    amount: 12500.00,
-    currency: 'CAD',
-    account: 'TD Business Chequing ****8832',
-    suggestedCategory: 'INC-SE',
-    confidence: 0.99,
-    rationale: 'Client payment - invoice reference detected. Business revenue.',
-    status: 'approved',
-    flags: [],
-    gstHst: null,
-    sourceDoc: 'td-chequing-jan-2024.pdf',
-    sourcePage: 2
-  },
-  {
-    id: 10,
-    date: '2024-01-05',
-    description: 'ROGERS WIRELESS',
-    originalDescription: 'ROGERS WIRELESS PAY',
-    merchant: 'Rogers',
-    amount: -125.00,
-    currency: 'CAD',
-    account: 'TD Business Visa ****4521',
-    suggestedCategory: 'EXP-TEL',
-    confidence: 0.94,
-    rationale: 'Telecommunications expense. If personal phone used for business, prorate.',
-    status: 'pending',
-    flags: ['mixed_use_possible'],
-    gstHst: 16.25,
-    sourceDoc: 'td-visa-jan-2024.pdf',
-    sourcePage: 4,
-    prompt: 'What % of this phone is used for business?'
   }
 ];
 
 const MOCK_DOCUMENTS = [
-  { id: 1, name: 'td-visa-jan-2024.pdf', type: 'Bank Statement', status: 'processed', pages: 8, transactions: 42, uploadedAt: '2024-01-15 10:30 AM' },
-  { id: 2, name: 'td-chequing-jan-2024.pdf', type: 'Bank Statement', status: 'processed', pages: 4, transactions: 18, uploadedAt: '2024-01-15 10:30 AM' },
-  { id: 3, name: 'receipt-amazon-jan14.jpg', type: 'Receipt', status: 'processed', pages: 1, transactions: 1, uploadedAt: '2024-01-15 10:32 AM' },
-  { id: 4, name: 'T4-2023-employer.pdf', type: 'Tax Slip', status: 'processed', pages: 1, transactions: null, uploadedAt: '2024-01-14 2:15 PM' },
-  { id: 5, name: 'bookkeeping-export.xlsx', type: 'Spreadsheet', status: 'processed', pages: 3, transactions: 156, uploadedAt: '2024-01-18 9:00 AM' },
+  { id: 1, name: 'td-visa-jan-2024.pdf', type: 'Bank Statement', status: 'processed', pages: 8, transactions: 1, uploadedAt: '2024-01-15 10:30 AM' }
 ];
 
 const MOCK_QUESTIONS = [
-  { id: 1, transaction: 'Shell Gas - Jan 12', question: 'What percentage of vehicle use is for business?', status: 'pending', createdAt: '2024-01-16' },
-  { id: 2, transaction: 'Amazon - Jan 14', question: 'What items were purchased? Were they for business use?', status: 'pending', createdAt: '2024-01-16' },
-  { id: 3, transaction: 'Shoppers Drug Mart - Jan 9', question: 'Was this purchase for business supplies or personal?', status: 'pending', createdAt: '2024-01-16' },
-  { id: 4, transaction: 'Rogers Wireless', question: 'What percentage of your phone plan is used for business?', status: 'answered', answer: '60% business use', createdAt: '2024-01-15' },
+  { id: 1, transaction: 'Uber Eats - Jan 15', question: 'Was this meal for a business meeting?', status: 'pending', createdAt: '2024-01-16' }
 ];
 
 // ============================================================================
@@ -354,10 +125,10 @@ const MOCK_QUESTIONS = [
 const Sidebar = ({ activeView, setActiveView, collapsed, setCollapsed }) => {
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', badge: null },
-    { id: 'clients', icon: Users, label: 'Clients', badge: 5 },
+    { id: 'clients', icon: Users, label: 'Clients', badge: 1 },
     { id: 'upload', icon: Upload, label: 'Upload Center', badge: null },
-    { id: 'review', icon: ClipboardList, label: 'Transaction Review', badge: 12 },
-    { id: 'questions', icon: MessageSquare, label: 'Client Questions', badge: 3 },
+    { id: 'review', icon: ClipboardList, label: 'Transaction Review', badge: 1 },
+    { id: 'questions', icon: MessageSquare, label: 'Client Questions', badge: 1 },
     { id: 'reports', icon: FileText, label: 'Reports', badge: null },
     { id: 'rules', icon: Sparkles, label: 'AI Rules', badge: null },
     { id: 'settings', icon: Settings, label: 'Settings', badge: null },
@@ -463,18 +234,15 @@ const TopHeader = ({ currentClient, setCurrentClient }) => {
 
 const DashboardView = ({ setActiveView, setCurrentClient }) => {
   const workQueue = [
-    { status: 'needs_review', label: 'Needs Review', count: 3, color: '#f59e0b', icon: Clock },
-    { status: 'needs_client', label: 'Needs Client Info', count: 2, color: '#8b5cf6', icon: MessageSquare },
-    { status: 'ready_report', label: 'Ready for Report', count: 1, color: '#10b981', icon: FileText },
+    { status: 'needs_review', label: 'Needs Review', count: 1, color: '#f59e0b', icon: Clock },
+    { status: 'needs_client', label: 'Needs Client Info', count: 0, color: '#8b5cf6', icon: MessageSquare },
+    { status: 'ready_report', label: 'Ready for Report', count: 0, color: '#10b981', icon: FileText },
     { status: 'ready_file', label: 'Ready to File', count: 0, color: '#3b82f6', icon: Send },
-    { status: 'filed', label: 'Filed / Archived', count: 4, color: '#6b7280', icon: Archive },
+    { status: 'filed', label: 'Filed / Archived', count: 0, color: '#6b7280', icon: Archive },
   ];
 
   const recentActivity = [
-    { time: '10 min ago', action: 'Uploaded 3 documents', client: 'Sarah Chen', type: 'upload' },
-    { time: '1 hour ago', action: 'Approved 15 transactions', client: 'TechFlow Solutions', type: 'approve' },
-    { time: '2 hours ago', action: 'Generated review report', client: 'Michael Rodriguez', type: 'report' },
-    { time: '3 hours ago', action: 'Client answered 2 questions', client: 'Jennifer Walsh', type: 'answer' },
+    { time: '10 min ago', action: 'Uploaded 1 document', client: 'Sarah Chen', type: 'upload' }
   ];
 
   return (
@@ -566,19 +334,19 @@ const DashboardView = ({ setActiveView, setCurrentClient }) => {
           </div>
           <div className="stats-grid">
             <div className="stat-card">
-              <span className="stat-value">47</span>
+              <span className="stat-value">1</span>
               <span className="stat-label">Documents Processed</span>
             </div>
             <div className="stat-card">
-              <span className="stat-value">234</span>
+              <span className="stat-value">1</span>
               <span className="stat-label">Transactions Reviewed</span>
             </div>
             <div className="stat-card">
-              <span className="stat-value">89%</span>
+              <span className="stat-value">92%</span>
               <span className="stat-label">AI Accuracy</span>
             </div>
             <div className="stat-card">
-              <span className="stat-value">3</span>
+              <span className="stat-value">0</span>
               <span className="stat-label">Reports Generated</span>
             </div>
           </div>
@@ -1078,7 +846,7 @@ const TransactionReview = ({ currentClient }) => {
                 </div>
                 <div className="txn-flags">
                   {txn.flags.map((flag, idx) => (
-                    <span key={idx} className={`flag-badge ${flag.replace('_', '-')}`}>
+                    <span key={idx} className={`flag-badge ${flag === '50% limitation' ? 'meal-limitation' : flag.replace('_', '-')}`}>
                       {flag === '50% limitation' && <Percent size={12} />}
                       {flag === 'needs_receipt' && <Receipt size={12} />}
                       {flag === 'needs_km_log' && <Car size={12} />}
@@ -1519,11 +1287,7 @@ const ReportsView = ({ currentClient }) => {
 
 const RulesView = () => {
   const rules = [
-    { id: 1, merchant: 'UBER *EATS', category: 'Meals & Entertainment', scope: 'Firm-wide', uses: 47 },
-    { id: 2, merchant: 'GOOGLE *ADS', category: 'Advertising', scope: 'Firm-wide', uses: 23 },
-    { id: 3, merchant: 'SHELL', category: 'Fuel & Auto', scope: 'Firm-wide', uses: 89 },
-    { id: 4, merchant: 'STRIPE', category: 'Self-Employment Income', scope: 'Client: TechFlow', uses: 12 },
-    { id: 5, merchant: 'ROGERS', category: 'Telephone & Internet', scope: 'Firm-wide', uses: 34 },
+    { id: 1, merchant: 'UBER *EATS', category: 'Meals & Entertainment', scope: 'Firm-wide', uses: 1 }
   ];
 
   return (
@@ -1582,26 +1346,9 @@ const RulesView = () => {
               <div className="suggestion-content">
                 <Sparkles size={18} />
                 <div>
-                  <strong>AMAZON.CA → Office Expenses</strong>
-                  <p>You've categorized 12 Amazon transactions as Office Expenses. Create a rule?</p>
+                  <strong>No suggestions yet</strong>
+                  <p>Review more transactions to receive AI-powered rule suggestions.</p>
                 </div>
-              </div>
-              <div className="suggestion-actions">
-                <button className="approve-btn"><Check size={16} /></button>
-                <button className="reject-btn"><X size={16} /></button>
-              </div>
-            </div>
-            <div className="suggestion-card">
-              <div className="suggestion-content">
-                <Sparkles size={18} />
-                <div>
-                  <strong>COSTCO → Supplies</strong>
-                  <p>You've categorized 8 Costco transactions as Supplies. Create a rule?</p>
-                </div>
-              </div>
-              <div className="suggestion-actions">
-                <button className="approve-btn"><Check size={16} /></button>
-                <button className="reject-btn"><X size={16} /></button>
               </div>
             </div>
           </div>
@@ -1651,14 +1398,6 @@ const SettingsView = () => {
               <div className="member-info">
                 <span className="member-name">Jessica Davis</span>
                 <span className="member-role">Admin Partner</span>
-              </div>
-              <button className="icon-btn"><Edit3 size={16} /></button>
-            </div>
-            <div className="team-member">
-              <div className="avatar">MK</div>
-              <div className="member-info">
-                <span className="member-name">Michael Kim</span>
-                <span className="member-role">Staff Accountant</span>
               </div>
               <button className="icon-btn"><Edit3 size={16} /></button>
             </div>
