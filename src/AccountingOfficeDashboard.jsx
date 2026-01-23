@@ -624,10 +624,12 @@ const UploadCenter = ({ clients, currentClient, setCurrentClient, onNotify }) =>
             uploadedAt: new Date().toLocaleString()
           }));
           setUploadedDocuments(prev => [...newDocs, ...prev]);
+          setUploading(false);
+          onNotify?.(`Successfully uploaded ${fileArray.length} file${fileArray.length > 1 ? 's' : ''}.`);
         }, 1500);
       }
     }, 200);
-  }, [currentClient, onNotify]);
+  }, [currentClient, onNotify, getFileType]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -866,10 +868,10 @@ const TransactionReview = ({ currentClient, onNotify }) => {
           <div className="panel-header">
             <h3>Document Preview</h3>
             <div className="preview-controls">
-              <button className="icon-btn"><ZoomOut size={16} /></button>
-              <button className="icon-btn"><ZoomIn size={16} /></button>
-              <button className="icon-btn"><RotateCw size={16} /></button>
-              <button className="icon-btn"><Maximize2 size={16} /></button>
+              <button className="icon-btn" onClick={() => onNotify?.('Zoomed out.')}><ZoomOut size={16} /></button>
+              <button className="icon-btn" onClick={() => onNotify?.('Zoomed in.')}><ZoomIn size={16} /></button>
+              <button className="icon-btn" onClick={() => onNotify?.('Document rotated.')}><RotateCw size={16} /></button>
+              <button className="icon-btn" onClick={() => onNotify?.('Maximized view.')}><Maximize2 size={16} /></button>
             </div>
           </div>
           <div className="document-preview">
@@ -882,9 +884,9 @@ const TransactionReview = ({ currentClient, onNotify }) => {
             </div>
           </div>
           <div className="preview-pagination">
-            <button className="icon-btn"><ChevronLeft size={18} /></button>
+            <button className="icon-btn" onClick={() => onNotify?.('Previous page.')}><ChevronLeft size={18} /></button>
             <span>Page {selectedTransaction?.sourcePage || 1} of 8</span>
-            <button className="icon-btn"><ChevronRight size={18} /></button>
+            <button className="icon-btn" onClick={() => onNotify?.('Next page.')}><ChevronRight size={18} /></button>
           </div>
         </div>
 
@@ -1101,7 +1103,7 @@ const TransactionReview = ({ currentClient, onNotify }) => {
                   <label>Question for Client</label>
                   <div className="question-preview">
                     <p>{selectedTransaction.prompt}</p>
-                    <button className="text-btn">
+                    <button className="text-btn" onClick={() => onNotify?.('Question added to client questions.')}>
                       <MessageSquare size={14} />
                       Add to Questions
                     </button>
@@ -1478,7 +1480,86 @@ const RulesView = ({ onNotify }) => {
 // COMPONENT: SETTINGS
 // ============================================================================
 
-const SettingsView = ({ onNotify }) => {
+const SettingsView = ({ teamMembers, setTeamMembers, onNotify }) => {
+  const [showNewMemberModal, setShowNewMemberModal] = useState(false);
+  const [editingMember, setEditingMember] = useState(null);
+  const [draftMember, setDraftMember] = useState({
+    name: '',
+    email: '',
+    role: 'Staff Accountant'
+  });
+
+  const getInitials = (name) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2);
+  };
+
+  const handleCreateMember = () => {
+    if (!draftMember.name.trim()) {
+      onNotify?.('Please enter a name for the team member.');
+      return;
+    }
+    if (!draftMember.email.trim()) {
+      onNotify?.('Please enter an email for the team member.');
+      return;
+    }
+
+    const newMember = {
+      id: Date.now(),
+      name: draftMember.name.trim(),
+      email: draftMember.email.trim(),
+      role: draftMember.role,
+      initials: getInitials(draftMember.name.trim())
+    };
+
+    setTeamMembers(prev => [...prev, newMember]);
+    setDraftMember({ name: '', email: '', role: 'Staff Accountant' });
+    setShowNewMemberModal(false);
+    onNotify?.(`Team member ${newMember.name} added successfully.`);
+  };
+
+  const handleUpdateMember = () => {
+    if (!draftMember.name.trim()) {
+      onNotify?.('Please enter a name for the team member.');
+      return;
+    }
+    if (!draftMember.email.trim()) {
+      onNotify?.('Please enter an email for the team member.');
+      return;
+    }
+
+    setTeamMembers(prev => prev.map(m =>
+      m.id === editingMember.id
+        ? { ...m, name: draftMember.name.trim(), email: draftMember.email.trim(), role: draftMember.role, initials: getInitials(draftMember.name.trim()) }
+        : m
+    ));
+    setDraftMember({ name: '', email: '', role: 'Staff Accountant' });
+    setEditingMember(null);
+    setShowNewMemberModal(false);
+    onNotify?.(`Team member updated successfully.`);
+  };
+
+  const handleDeleteMember = (member) => {
+    setTeamMembers(prev => prev.filter(m => m.id !== member.id));
+    onNotify?.(`Team member ${member.name} removed.`);
+  };
+
+  const openEditModal = (member) => {
+    setEditingMember(member);
+    setDraftMember({ name: member.name, email: member.email || '', role: member.role });
+    setShowNewMemberModal(true);
+  };
+
+  const closeModal = () => {
+    setShowNewMemberModal(false);
+    setEditingMember(null);
+    setDraftMember({ name: '', email: '', role: 'Staff Accountant' });
+  };
+
   return (
     <div className="settings-view">
       <div className="view-header">
@@ -1509,22 +1590,84 @@ const SettingsView = ({ onNotify }) => {
         <div className="settings-section">
           <h3>Team Members</h3>
           <div className="team-list">
-            <div className="team-member">
-              <div className="avatar">JD</div>
-              <div className="member-info">
-                <span className="member-name">Jessica Davis</span>
-                <span className="member-role">Admin Partner</span>
+            {teamMembers.map(member => (
+              <div key={member.id} className="team-member">
+                <div className="avatar">{member.initials}</div>
+                <div className="member-info">
+                  <span className="member-name">{member.name}</span>
+                  <span className="member-role">{member.role}</span>
+                </div>
+                <button className="icon-btn" onClick={() => openEditModal(member)}>
+                  <Edit3 size={16} />
+                </button>
+                {teamMembers.length > 1 && (
+                  <button className="icon-btn" onClick={() => handleDeleteMember(member)}>
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
-              <button className="icon-btn" onClick={() => onNotify?.('Edit team member coming soon.')}>
-                <Edit3 size={16} />
-              </button>
-            </div>
+            ))}
           </div>
-          <button className="text-btn" onClick={() => onNotify?.('Add team member flow coming soon.')}>
+          <button className="text-btn" onClick={() => setShowNewMemberModal(true)}>
             <Plus size={16} />
             Add Team Member
           </button>
         </div>
+
+        {showNewMemberModal && (
+          <div className="category-picker-overlay" onClick={closeModal}>
+            <div className="category-picker" onClick={(e) => e.stopPropagation()}>
+              <div className="picker-header">
+                <h3>{editingMember ? 'Edit Team Member' : 'Add Team Member'}</h3>
+              </div>
+              <div className="picker-content">
+                <div className="settings-form" style={{ gap: '16px' }}>
+                  <div className="form-group">
+                    <label>Full Name</label>
+                    <input
+                      type="text"
+                      placeholder="Enter full name"
+                      value={draftMember.name}
+                      onChange={(e) => setDraftMember(prev => ({ ...prev, name: e.target.value }))}
+                      autoFocus
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Email</label>
+                    <input
+                      type="email"
+                      placeholder="Enter email address"
+                      value={draftMember.email}
+                      onChange={(e) => setDraftMember(prev => ({ ...prev, email: e.target.value }))}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Role</label>
+                    <select
+                      value={draftMember.role}
+                      onChange={(e) => setDraftMember(prev => ({ ...prev, role: e.target.value }))}
+                    >
+                      <option value="Admin Partner">Admin Partner</option>
+                      <option value="Partner">Partner</option>
+                      <option value="Senior Accountant">Senior Accountant</option>
+                      <option value="Staff Accountant">Staff Accountant</option>
+                      <option value="Bookkeeper">Bookkeeper</option>
+                      <option value="Admin">Admin</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div className="picker-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <button className="secondary-btn" onClick={closeModal}>
+                  Cancel
+                </button>
+                <button className="primary-btn" onClick={editingMember ? handleUpdateMember : handleCreateMember}>
+                  {editingMember ? 'Save Changes' : 'Add Team Member'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="settings-section">
           <h3>AI Configuration</h3>
@@ -1570,11 +1713,16 @@ const SettingsView = ({ onNotify }) => {
 // MAIN APP COMPONENT
 // ============================================================================
 
+const INITIAL_TEAM_MEMBERS = [
+  { id: 1, name: 'Jessica Davis', email: 'jessica@davis-cpa.com', role: 'Admin Partner', initials: 'JD' }
+];
+
 const AccountingOfficeDashboard = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentClient, setCurrentClient] = useState(null);
   const [clients, setClients] = useState(MOCK_CLIENTS);
+  const [teamMembers, setTeamMembers] = useState(INITIAL_TEAM_MEMBERS);
   const [toast, setToast] = useState(null);
 
   const handleNotify = useCallback((message) => {
@@ -1655,7 +1803,7 @@ const AccountingOfficeDashboard = () => {
       case 'rules':
         return <RulesView onNotify={handleNotify} />;
       case 'settings':
-        return <SettingsView onNotify={handleNotify} />;
+        return <SettingsView teamMembers={teamMembers} setTeamMembers={setTeamMembers} onNotify={handleNotify} />;
       default:
         return (
           <DashboardView
