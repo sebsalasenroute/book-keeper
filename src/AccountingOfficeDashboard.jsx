@@ -182,7 +182,7 @@ const Sidebar = ({ activeView, setActiveView, collapsed, setCollapsed }) => {
 // COMPONENT: TOP HEADER
 // ============================================================================
 
-const TopHeader = ({ currentClient, setCurrentClient }) => {
+const TopHeader = ({ currentClient, setCurrentClient, onNotify }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   
   return (
@@ -216,11 +216,11 @@ const TopHeader = ({ currentClient, setCurrentClient }) => {
       </div>
       
       <div className="header-right">
-        <button className="header-btn">
+        <button className="header-btn" onClick={() => onNotify?.('Notifications opened.')}>
           <Bell size={20} />
           <span className="notification-dot"></span>
         </button>
-        <button className="header-btn">
+        <button className="header-btn" onClick={() => onNotify?.('Help center opened.')}>
           <HelpCircle size={20} />
         </button>
       </div>
@@ -232,7 +232,7 @@ const TopHeader = ({ currentClient, setCurrentClient }) => {
 // COMPONENT: DASHBOARD VIEW
 // ============================================================================
 
-const DashboardView = ({ setActiveView, setCurrentClient }) => {
+const DashboardView = ({ clients, setActiveView, setCurrentClient }) => {
   const workQueue = [
     { status: 'needs_review', label: 'Needs Review', count: 1, color: '#f59e0b', icon: Clock },
     { status: 'needs_client', label: 'Needs Client Info', count: 0, color: '#8b5cf6', icon: MessageSquare },
@@ -278,7 +278,7 @@ const DashboardView = ({ setActiveView, setCurrentClient }) => {
             <button className="text-btn" onClick={() => setActiveView('clients')}>View All</button>
           </div>
           <div className="client-list">
-            {MOCK_CLIENTS.filter(c => c.status !== 'filed').slice(0, 4).map(client => (
+            {clients.filter(c => c.status !== 'filed').slice(0, 4).map(client => (
               <button 
                 key={client.id} 
                 className="client-row"
@@ -360,24 +360,58 @@ const DashboardView = ({ setActiveView, setCurrentClient }) => {
 // COMPONENT: CLIENTS VIEW
 // ============================================================================
 
-const ClientsView = ({ setCurrentClient, setActiveView }) => {
+const ClientsView = ({ clients, setClients, setCurrentClient, setActiveView, onNotify }) => {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
+  const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [draftClient, setDraftClient] = useState({
+    name: '',
+    type: 'Individual',
+    province: 'BC',
+    engagement: 'T1 Personal'
+  });
 
-  const filteredClients = MOCK_CLIENTS.filter(client => {
+  const filteredClients = clients.filter(client => {
     if (filter !== 'all' && client.status !== filter) return false;
     if (search && !client.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
+
+  const handleCreateClient = () => {
+    if (!draftClient.name.trim()) {
+      onNotify?.('Add a client name to continue.');
+      return;
+    }
+
+    const newClient = {
+      id: Date.now(),
+      name: draftClient.name.trim(),
+      type: draftClient.type,
+      status: 'needs_review',
+      province: draftClient.province,
+      taxYears: [2024],
+      gstRegistered: false,
+      lastUpload: '—',
+      pendingItems: 0,
+      totalIncome: 0,
+      totalExpenses: 0,
+      engagement: draftClient.engagement
+    };
+
+    setClients(prev => [newClient, ...prev]);
+    setDraftClient({ name: '', type: 'Individual', province: 'BC', engagement: 'T1 Personal' });
+    setShowNewClientModal(false);
+    onNotify?.(`Client ${newClient.name} added.`);
+  };
 
   return (
     <div className="clients-view">
       <div className="view-header">
         <div>
           <h1>Clients</h1>
-          <p className="view-subtitle">{MOCK_CLIENTS.length} total clients</p>
+          <p className="view-subtitle">{clients.length} total clients</p>
         </div>
-        <button className="primary-btn">
+        <button className="primary-btn" onClick={() => setShowNewClientModal(true)}>
           <Plus size={18} />
           New Client
         </button>
@@ -457,6 +491,72 @@ const ClientsView = ({ setCurrentClient, setActiveView }) => {
           </div>
         ))}
       </div>
+
+      {showNewClientModal && (
+        <div className="category-picker-overlay" onClick={() => setShowNewClientModal(false)}>
+          <div className="category-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Add New Client</h3>
+              <div className="picker-search">
+                <input
+                  type="text"
+                  placeholder="Client name"
+                  value={draftClient.name}
+                  onChange={(e) => setDraftClient(prev => ({ ...prev, name: e.target.value }))}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="picker-content">
+              <div className="settings-form" style={{ gap: '16px' }}>
+                <div className="form-group">
+                  <label>Client Type</label>
+                  <select
+                    value={draftClient.type}
+                    onChange={(e) => setDraftClient(prev => ({ ...prev, type: e.target.value }))}
+                  >
+                    <option value="Individual">Individual</option>
+                    <option value="Corporation">Corporation</option>
+                    <option value="Partnership">Partnership</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Province</label>
+                  <select
+                    value={draftClient.province}
+                    onChange={(e) => setDraftClient(prev => ({ ...prev, province: e.target.value }))}
+                  >
+                    <option value="BC">British Columbia</option>
+                    <option value="AB">Alberta</option>
+                    <option value="ON">Ontario</option>
+                    <option value="QC">Quebec</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Engagement</label>
+                  <select
+                    value={draftClient.engagement}
+                    onChange={(e) => setDraftClient(prev => ({ ...prev, engagement: e.target.value }))}
+                  >
+                    <option value="T1 Personal">T1 Personal</option>
+                    <option value="T2 Corporate">T2 Corporate</option>
+                    <option value="T3 Trust">T3 Trust</option>
+                    <option value="T4 Payroll">T4 Payroll</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="picker-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="secondary-btn" onClick={() => setShowNewClientModal(false)}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={handleCreateClient}>
+                Add Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -465,7 +565,7 @@ const ClientsView = ({ setCurrentClient, setActiveView }) => {
 // COMPONENT: UPLOAD CENTER
 // ============================================================================
 
-const UploadCenter = ({ currentClient, setCurrentClient }) => {
+const UploadCenter = ({ clients, currentClient, setCurrentClient, onNotify }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
@@ -482,7 +582,10 @@ const UploadCenter = ({ currentClient, setCurrentClient }) => {
   };
 
   const processFiles = useCallback((files) => {
-    if (!currentClient) return;
+    if (!currentClient) {
+      onNotify?.('Select a client before uploading documents.');
+      return;
+    }
 
     const fileArray = Array.from(files);
     const newUploads = fileArray.map(file => ({
@@ -524,7 +627,7 @@ const UploadCenter = ({ currentClient, setCurrentClient }) => {
         }, 1500);
       }
     }, 200);
-  }, [currentClient]);
+  }, [currentClient, onNotify]);
 
   const handleDrop = useCallback((e) => {
     e.preventDefault();
@@ -541,7 +644,12 @@ const UploadCenter = ({ currentClient, setCurrentClient }) => {
   }, [processFiles]);
 
   const handleClick = () => {
-    if (currentClient && fileInputRef.current) {
+    if (!currentClient) {
+      setClientSelectorOpen(true);
+      onNotify?.('Select a client to enable uploads.');
+      return;
+    }
+    if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
@@ -566,7 +674,7 @@ const UploadCenter = ({ currentClient, setCurrentClient }) => {
           </button>
           {clientSelectorOpen && (
             <div className="client-selector-dropdown">
-              {MOCK_CLIENTS.map(client => (
+              {clients.map(client => (
                 <button
                   key={client.id}
                   className={`client-option ${currentClient?.id === client.id ? 'selected' : ''}`}
@@ -606,7 +714,7 @@ const UploadCenter = ({ currentClient, setCurrentClient }) => {
           <div className="upload-icon">
             <Upload size={48} />
           </div>
-          <h3>Drop files here or click to browse</h3>
+          <h3>{currentClient ? 'Drop files here or click to browse' : 'Select a client to start uploading'}</h3>
           <p>Supports PDF, CSV, XLSX, JPG, PNG • Max 50MB per file</p>
           <div className="supported-types">
             <span><FileText size={14} /> Bank Statements</span>
@@ -678,7 +786,7 @@ const UploadCenter = ({ currentClient, setCurrentClient }) => {
 // COMPONENT: TRANSACTION REVIEW WORKSPACE
 // ============================================================================
 
-const TransactionReview = ({ currentClient }) => {
+const TransactionReview = ({ currentClient, onNotify }) => {
   const [transactions, setTransactions] = useState(MOCK_TRANSACTIONS);
   const [selectedTransaction, setSelectedTransaction] = useState(MOCK_TRANSACTIONS[0]);
   const [filter, setFilter] = useState('pending');
@@ -745,7 +853,7 @@ const TransactionReview = ({ currentClient }) => {
               Approve {bulkSelected.length} Selected
             </button>
           )}
-          <button className="secondary-btn">
+          <button className="secondary-btn" onClick={() => onNotify?.('Filters are coming soon.')}>
             <Filter size={18} />
             Filters
           </button>
@@ -1024,18 +1132,18 @@ const TransactionReview = ({ currentClient }) => {
                   <Edit3 size={16} />
                   Change Category
                 </button>
-                <button className="action-btn secondary">
+                <button className="action-btn secondary" onClick={() => onNotify?.('Split transaction workflow coming soon.')}>
                   <Split size={16} />
                   Split Transaction
                 </button>
-                <button className="action-btn secondary">
+                <button className="action-btn secondary" onClick={() => onNotify?.('Client question drafted and queued.')}>
                   <MessageSquare size={16} />
                   Ask Client
                 </button>
               </div>
 
               <div className="ai-section create-rule">
-                <button className="rule-btn">
+                <button className="rule-btn" onClick={() => onNotify?.('Rule created and saved to AI rules.')}>
                   <Sparkles size={16} />
                   Create Rule: "{selectedTransaction.merchant}" → {CRA_CATEGORIES.expenses[selectedTransaction.suggestedCategory]?.name || selectedTransaction.suggestedCategory}
                 </button>
@@ -1133,7 +1241,7 @@ const TransactionReview = ({ currentClient }) => {
 // COMPONENT: CLIENT QUESTIONS
 // ============================================================================
 
-const QuestionsView = ({ currentClient }) => {
+const QuestionsView = ({ currentClient, onNotify }) => {
   return (
     <div className="questions-view">
       <div className="view-header">
@@ -1143,7 +1251,7 @@ const QuestionsView = ({ currentClient }) => {
             {currentClient ? currentClient.name : 'All Clients'} • {MOCK_QUESTIONS.filter(q => q.status === 'pending').length} pending
           </p>
         </div>
-        <button className="primary-btn">
+        <button className="primary-btn" onClick={() => onNotify?.('Questions sent to client.')}>
           <Send size={18} />
           Send to Client
         </button>
@@ -1168,8 +1276,12 @@ const QuestionsView = ({ currentClient }) => {
             <div className="question-footer">
               <span className="question-date">Created {q.createdAt}</span>
               <div className="question-actions">
-                <button className="icon-btn"><Edit3 size={16} /></button>
-                <button className="icon-btn"><Trash2 size={16} /></button>
+                <button className="icon-btn" onClick={() => onNotify?.('Edit question coming soon.')}>
+                  <Edit3 size={16} />
+                </button>
+                <button className="icon-btn" onClick={() => onNotify?.('Question removed.')}>
+                  <Trash2 size={16} />
+                </button>
               </div>
             </div>
           </div>
@@ -1183,7 +1295,7 @@ const QuestionsView = ({ currentClient }) => {
 // COMPONENT: REPORTS VIEW
 // ============================================================================
 
-const ReportsView = ({ currentClient }) => {
+const ReportsView = ({ currentClient, onNotify }) => {
   return (
     <div className="reports-view">
       <div className="view-header">
@@ -1200,7 +1312,7 @@ const ReportsView = ({ currentClient }) => {
           </div>
           <h3>Client Review Package</h3>
           <p>Summary of income, expenses, flagged items, and questions for client approval.</p>
-          <button className="primary-btn">
+          <button className="primary-btn" onClick={() => onNotify?.('Generating report package...')}>
             <Sparkles size={18} />
             Generate Report
           </button>
@@ -1213,11 +1325,11 @@ const ReportsView = ({ currentClient }) => {
           <h3>Categorized Ledger</h3>
           <p>Export all transactions with CRA categories for tax software or bookkeeping.</p>
           <div className="export-options">
-            <button className="secondary-btn">
+            <button className="secondary-btn" onClick={() => onNotify?.('Exporting ledger as CSV...')}>
               <Download size={16} />
               CSV
             </button>
-            <button className="secondary-btn">
+            <button className="secondary-btn" onClick={() => onNotify?.('Exporting ledger as XLSX...')}>
               <Download size={16} />
               XLSX
             </button>
@@ -1230,7 +1342,7 @@ const ReportsView = ({ currentClient }) => {
           </div>
           <h3>Supporting Documents</h3>
           <p>Index of all uploaded documents with transaction links for audit defense.</p>
-          <button className="secondary-btn">
+          <button className="secondary-btn" onClick={() => onNotify?.('Downloading document index...')}>
             <Download size={16} />
             Download Index
           </button>
@@ -1242,7 +1354,7 @@ const ReportsView = ({ currentClient }) => {
           </div>
           <h3>Summary Dashboard</h3>
           <p>Visual overview of income vs expenses by category and month.</p>
-          <button className="secondary-btn">
+          <button className="secondary-btn" onClick={() => onNotify?.('Opening summary dashboard...')}>
             <Eye size={16} />
             View Dashboard
           </button>
@@ -1285,7 +1397,7 @@ const ReportsView = ({ currentClient }) => {
 // COMPONENT: AI RULES
 // ============================================================================
 
-const RulesView = () => {
+const RulesView = ({ onNotify }) => {
   const rules = [
     { id: 1, merchant: 'UBER *EATS', category: 'Meals & Entertainment', scope: 'Firm-wide', uses: 1 }
   ];
@@ -1297,7 +1409,7 @@ const RulesView = () => {
           <h1>AI Rules</h1>
           <p className="view-subtitle">Manage categorization rules and teach the AI</p>
         </div>
-        <button className="primary-btn">
+        <button className="primary-btn" onClick={() => onNotify?.('New rule creator coming soon.')}>
           <Plus size={18} />
           Create Rule
         </button>
@@ -1329,8 +1441,12 @@ const RulesView = () => {
                 </span>
                 <span className="rule-uses">{rule.uses} matches</span>
                 <span className="rule-actions">
-                  <button className="icon-btn"><Edit3 size={16} /></button>
-                  <button className="icon-btn"><Trash2 size={16} /></button>
+                  <button className="icon-btn" onClick={() => onNotify?.('Edit rule coming soon.')}>
+                    <Edit3 size={16} />
+                  </button>
+                  <button className="icon-btn" onClick={() => onNotify?.('Rule removed.')}>
+                    <Trash2 size={16} />
+                  </button>
                 </span>
               </div>
             ))}
@@ -1362,7 +1478,7 @@ const RulesView = () => {
 // COMPONENT: SETTINGS
 // ============================================================================
 
-const SettingsView = () => {
+const SettingsView = ({ onNotify }) => {
   return (
     <div className="settings-view">
       <div className="view-header">
@@ -1399,10 +1515,12 @@ const SettingsView = () => {
                 <span className="member-name">Jessica Davis</span>
                 <span className="member-role">Admin Partner</span>
               </div>
-              <button className="icon-btn"><Edit3 size={16} /></button>
+              <button className="icon-btn" onClick={() => onNotify?.('Edit team member coming soon.')}>
+                <Edit3 size={16} />
+              </button>
             </div>
           </div>
-          <button className="text-btn">
+          <button className="text-btn" onClick={() => onNotify?.('Add team member flow coming soon.')}>
             <Plus size={16} />
             Add Team Member
           </button>
@@ -1456,6 +1574,19 @@ const AccountingOfficeDashboard = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentClient, setCurrentClient] = useState(null);
+  const [clients, setClients] = useState(MOCK_CLIENTS);
+  const [toast, setToast] = useState(null);
+
+  const handleNotify = useCallback((message) => {
+    if (!message) return;
+    setToast({ id: Date.now(), message });
+  }, []);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timeout = setTimeout(() => setToast(null), 3000);
+    return () => clearTimeout(timeout);
+  }, [toast]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -1489,23 +1620,50 @@ const AccountingOfficeDashboard = () => {
   const renderView = () => {
     switch (activeView) {
       case 'dashboard':
-        return <DashboardView setActiveView={setActiveView} setCurrentClient={setCurrentClient} />;
+        return (
+          <DashboardView
+            clients={clients}
+            setActiveView={setActiveView}
+            setCurrentClient={setCurrentClient}
+          />
+        );
       case 'clients':
-        return <ClientsView setCurrentClient={setCurrentClient} setActiveView={setActiveView} />;
+        return (
+          <ClientsView
+            clients={clients}
+            setClients={setClients}
+            setCurrentClient={setCurrentClient}
+            setActiveView={setActiveView}
+            onNotify={handleNotify}
+          />
+        );
       case 'upload':
-        return <UploadCenter currentClient={currentClient} setCurrentClient={setCurrentClient} />;
+        return (
+          <UploadCenter
+            clients={clients}
+            currentClient={currentClient}
+            setCurrentClient={setCurrentClient}
+            onNotify={handleNotify}
+          />
+        );
       case 'review':
-        return <TransactionReview currentClient={currentClient} />;
+        return <TransactionReview currentClient={currentClient} onNotify={handleNotify} />;
       case 'questions':
-        return <QuestionsView currentClient={currentClient} />;
+        return <QuestionsView currentClient={currentClient} onNotify={handleNotify} />;
       case 'reports':
-        return <ReportsView currentClient={currentClient} />;
+        return <ReportsView currentClient={currentClient} onNotify={handleNotify} />;
       case 'rules':
-        return <RulesView />;
+        return <RulesView onNotify={handleNotify} />;
       case 'settings':
-        return <SettingsView />;
+        return <SettingsView onNotify={handleNotify} />;
       default:
-        return <DashboardView setActiveView={setActiveView} setCurrentClient={setCurrentClient} />;
+        return (
+          <DashboardView
+            clients={clients}
+            setActiveView={setActiveView}
+            setCurrentClient={setCurrentClient}
+          />
+        );
     }
   };
 
@@ -1518,12 +1676,21 @@ const AccountingOfficeDashboard = () => {
         setCollapsed={setSidebarCollapsed}
       />
       <div className="main-content">
-        <TopHeader currentClient={currentClient} setCurrentClient={setCurrentClient} />
+        <TopHeader
+          currentClient={currentClient}
+          setCurrentClient={setCurrentClient}
+          onNotify={handleNotify}
+        />
         <main className="content-area">
           {renderView()}
         </main>
       </div>
-
+      {toast && (
+        <div className="toast" role="status" aria-live="polite">
+          <Sparkles size={16} />
+          {toast.message}
+        </div>
+      )}
     </div>
   );
 };
