@@ -364,11 +364,16 @@ const ClientsView = ({ clients, setClients, setCurrentClient, setActiveView, onN
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [showNewClientModal, setShowNewClientModal] = useState(false);
+  const [showEditClientModal, setShowEditClientModal] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  const [activeContextMenu, setActiveContextMenu] = useState(null);
+  const [editingClient, setEditingClient] = useState(null);
   const [draftClient, setDraftClient] = useState({
     name: '',
     type: 'Individual',
     province: 'BC',
-    engagement: 'T1 Personal'
+    engagement: 'T1 Personal',
+    status: 'needs_review'
   });
 
   const filteredClients = clients.filter(client => {
@@ -399,10 +404,73 @@ const ClientsView = ({ clients, setClients, setCurrentClient, setActiveView, onN
     };
 
     setClients(prev => [newClient, ...prev]);
-    setDraftClient({ name: '', type: 'Individual', province: 'BC', engagement: 'T1 Personal' });
+    setDraftClient({ name: '', type: 'Individual', province: 'BC', engagement: 'T1 Personal', status: 'needs_review' });
     setShowNewClientModal(false);
     onNotify?.(`Client ${newClient.name} added.`);
   };
+
+  const handleEditClient = () => {
+    if (!draftClient.name.trim()) {
+      onNotify?.('Add a client name to continue.');
+      return;
+    }
+
+    setClients(prev => prev.map(c =>
+      c.id === editingClient.id
+        ? {
+            ...c,
+            name: draftClient.name.trim(),
+            type: draftClient.type,
+            province: draftClient.province,
+            engagement: draftClient.engagement,
+            status: draftClient.status
+          }
+        : c
+    ));
+    setShowEditClientModal(false);
+    setEditingClient(null);
+    setDraftClient({ name: '', type: 'Individual', province: 'BC', engagement: 'T1 Personal', status: 'needs_review' });
+    onNotify?.(`Client ${draftClient.name.trim()} updated.`);
+  };
+
+  const handleDeleteClient = (client) => {
+    setClients(prev => prev.filter(c => c.id !== client.id));
+    setShowDeleteConfirm(null);
+    onNotify?.(`Client ${client.name} deleted.`);
+  };
+
+  const openEditModal = (client) => {
+    setEditingClient(client);
+    setDraftClient({
+      name: client.name,
+      type: client.type,
+      province: client.province,
+      engagement: client.engagement,
+      status: client.status
+    });
+    setShowEditClientModal(true);
+    setActiveContextMenu(null);
+  };
+
+  const openDeleteConfirm = (client) => {
+    setShowDeleteConfirm(client);
+    setActiveContextMenu(null);
+  };
+
+  const closeEditModal = () => {
+    setShowEditClientModal(false);
+    setEditingClient(null);
+    setDraftClient({ name: '', type: 'Individual', province: 'BC', engagement: 'T1 Personal', status: 'needs_review' });
+  };
+
+  // Close context menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setActiveContextMenu(null);
+    if (activeContextMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [activeContextMenu]);
 
   return (
     <div className="clients-view">
@@ -420,8 +488,8 @@ const ClientsView = ({ clients, setClients, setCurrentClient, setActiveView, onN
       <div className="filters-bar">
         <div className="search-input">
           <Search size={18} />
-          <input 
-            type="text" 
+          <input
+            type="text"
             placeholder="Search clients..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -429,8 +497,8 @@ const ClientsView = ({ clients, setClients, setCurrentClient, setActiveView, onN
         </div>
         <div className="filter-pills">
           {['all', 'needs_review', 'needs_client', 'ready_report', 'filed'].map(f => (
-            <button 
-              key={f} 
+            <button
+              key={f}
               className={`filter-pill ${filter === f ? 'active' : ''}`}
               onClick={() => setFilter(f)}
             >
@@ -451,8 +519,8 @@ const ClientsView = ({ clients, setClients, setCurrentClient, setActiveView, onN
           <span className="col-actions"></span>
         </div>
         {filteredClients.map(client => (
-          <div 
-            key={client.id} 
+          <div
+            key={client.id}
             className="table-row"
             onClick={() => {
               setCurrentClient(client);
@@ -483,15 +551,76 @@ const ClientsView = ({ clients, setClients, setCurrentClient, setActiveView, onN
               )}
             </span>
             <span className="col-income">${client.totalIncome.toLocaleString()}</span>
-            <span className="col-actions">
-              <button className="icon-btn" onClick={(e) => e.stopPropagation()}>
+            <span className="col-actions" style={{ position: 'relative' }}>
+              <button
+                className="icon-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveContextMenu(activeContextMenu === client.id ? null : client.id);
+                }}
+              >
                 <MoreHorizontal size={18} />
               </button>
+              {activeContextMenu === client.id && (
+                <div className="context-menu" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    className="context-menu-item"
+                    onClick={() => {
+                      setCurrentClient(client);
+                      setActiveView('review');
+                      setActiveContextMenu(null);
+                    }}
+                  >
+                    <Eye size={16} />
+                    View Details
+                  </button>
+                  <button
+                    className="context-menu-item"
+                    onClick={() => openEditModal(client)}
+                  >
+                    <Edit3 size={16} />
+                    Edit Client
+                  </button>
+                  <button
+                    className="context-menu-item"
+                    onClick={() => {
+                      setCurrentClient(client);
+                      setActiveView('upload');
+                      setActiveContextMenu(null);
+                    }}
+                  >
+                    <Upload size={16} />
+                    Upload Documents
+                  </button>
+                  <div className="context-menu-divider"></div>
+                  <button
+                    className="context-menu-item danger"
+                    onClick={() => openDeleteConfirm(client)}
+                  >
+                    <Trash2 size={16} />
+                    Delete Client
+                  </button>
+                </div>
+              )}
             </span>
           </div>
         ))}
+        {filteredClients.length === 0 && (
+          <div className="empty-state">
+            <Users size={48} />
+            <h3>No clients found</h3>
+            <p>{search ? 'Try adjusting your search or filters' : 'Add your first client to get started'}</p>
+            {!search && (
+              <button className="primary-btn" onClick={() => setShowNewClientModal(true)}>
+                <Plus size={18} />
+                Add Client
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
+      {/* New Client Modal */}
       {showNewClientModal && (
         <div className="category-picker-overlay" onClick={() => setShowNewClientModal(false)}>
           <div className="category-picker" onClick={(e) => e.stopPropagation()}>
@@ -552,6 +681,112 @@ const ClientsView = ({ clients, setClients, setCurrentClient, setActiveView, onN
               </button>
               <button className="primary-btn" onClick={handleCreateClient}>
                 Add Client
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Client Modal */}
+      {showEditClientModal && editingClient && (
+        <div className="category-picker-overlay" onClick={closeEditModal}>
+          <div className="category-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Edit Client</h3>
+              <div className="picker-search">
+                <input
+                  type="text"
+                  placeholder="Client name"
+                  value={draftClient.name}
+                  onChange={(e) => setDraftClient(prev => ({ ...prev, name: e.target.value }))}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="picker-content">
+              <div className="settings-form" style={{ gap: '16px' }}>
+                <div className="form-group">
+                  <label>Client Type</label>
+                  <select
+                    value={draftClient.type}
+                    onChange={(e) => setDraftClient(prev => ({ ...prev, type: e.target.value }))}
+                  >
+                    <option value="Individual">Individual</option>
+                    <option value="Corporation">Corporation</option>
+                    <option value="Partnership">Partnership</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Province</label>
+                  <select
+                    value={draftClient.province}
+                    onChange={(e) => setDraftClient(prev => ({ ...prev, province: e.target.value }))}
+                  >
+                    <option value="BC">British Columbia</option>
+                    <option value="AB">Alberta</option>
+                    <option value="ON">Ontario</option>
+                    <option value="QC">Quebec</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Engagement</label>
+                  <select
+                    value={draftClient.engagement}
+                    onChange={(e) => setDraftClient(prev => ({ ...prev, engagement: e.target.value }))}
+                  >
+                    <option value="T1 Personal">T1 Personal</option>
+                    <option value="T2 Corporate">T2 Corporate</option>
+                    <option value="T3 Trust">T3 Trust</option>
+                    <option value="T4 Payroll">T4 Payroll</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Status</label>
+                  <select
+                    value={draftClient.status}
+                    onChange={(e) => setDraftClient(prev => ({ ...prev, status: e.target.value }))}
+                  >
+                    <option value="needs_review">Needs Review</option>
+                    <option value="needs_client">Needs Client Info</option>
+                    <option value="ready_report">Ready for Report</option>
+                    <option value="filed">Filed</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="picker-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="secondary-btn" onClick={closeEditModal}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={handleEditClient}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="category-picker-overlay" onClick={() => setShowDeleteConfirm(null)}>
+          <div className="category-picker delete-confirm" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Delete Client</h3>
+            </div>
+            <div className="picker-content" style={{ padding: '20px' }}>
+              <div className="delete-warning">
+                <AlertTriangle size={48} />
+                <p>Are you sure you want to delete <strong>{showDeleteConfirm.name}</strong>?</p>
+                <p className="warning-text">This action cannot be undone. All associated data will be permanently removed.</p>
+              </div>
+            </div>
+            <div className="picker-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="secondary-btn" onClick={() => setShowDeleteConfirm(null)}>
+                Cancel
+              </button>
+              <button className="danger-btn" onClick={() => handleDeleteClient(showDeleteConfirm)}>
+                <Trash2 size={16} />
+                Delete Client
               </button>
             </div>
           </div>
@@ -794,13 +1029,49 @@ const TransactionReview = ({ currentClient, onNotify }) => {
   const [filter, setFilter] = useState('pending');
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [bulkSelected, setBulkSelected] = useState([]);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    minAmount: '',
+    maxAmount: '',
+    dateFrom: '',
+    dateTo: '',
+    category: 'all',
+    searchTerm: ''
+  });
 
   const filteredTransactions = transactions.filter(t => {
-    if (filter === 'pending') return t.status === 'pending';
-    if (filter === 'approved') return t.status === 'approved';
-    if (filter === 'flagged') return t.flags.length > 0;
+    // Basic status filter
+    if (filter === 'pending' && t.status !== 'pending') return false;
+    if (filter === 'approved' && t.status !== 'approved') return false;
+    if (filter === 'flagged' && t.flags.length === 0) return false;
+
+    // Advanced filters
+    if (advancedFilters.minAmount && Math.abs(t.amount) < parseFloat(advancedFilters.minAmount)) return false;
+    if (advancedFilters.maxAmount && Math.abs(t.amount) > parseFloat(advancedFilters.maxAmount)) return false;
+    if (advancedFilters.dateFrom && t.date < advancedFilters.dateFrom) return false;
+    if (advancedFilters.dateTo && t.date > advancedFilters.dateTo) return false;
+    if (advancedFilters.category !== 'all' && t.suggestedCategory !== advancedFilters.category) return false;
+    if (advancedFilters.searchTerm && !t.description.toLowerCase().includes(advancedFilters.searchTerm.toLowerCase()) &&
+        !t.merchant?.toLowerCase().includes(advancedFilters.searchTerm.toLowerCase())) return false;
+
     return true;
   });
+
+  const clearAdvancedFilters = () => {
+    setAdvancedFilters({
+      minAmount: '',
+      maxAmount: '',
+      dateFrom: '',
+      dateTo: '',
+      category: 'all',
+      searchTerm: ''
+    });
+    onNotify?.('Filters cleared.');
+  };
+
+  const hasActiveAdvancedFilters = advancedFilters.minAmount || advancedFilters.maxAmount ||
+    advancedFilters.dateFrom || advancedFilters.dateTo ||
+    advancedFilters.category !== 'all' || advancedFilters.searchTerm;
 
   const pendingCount = transactions.filter(t => t.status === 'pending').length;
   const approvedCount = transactions.filter(t => t.status === 'approved').length;
@@ -855,9 +1126,13 @@ const TransactionReview = ({ currentClient, onNotify }) => {
               Approve {bulkSelected.length} Selected
             </button>
           )}
-          <button className="secondary-btn" onClick={() => onNotify?.('Filters are coming soon.')}>
+          <button
+            className={`secondary-btn ${hasActiveAdvancedFilters ? 'active-filter' : ''}`}
+            onClick={() => setShowAdvancedFilters(true)}
+          >
             <Filter size={18} />
             Filters
+            {hasActiveAdvancedFilters && <span className="filter-indicator"></span>}
           </button>
         </div>
       </div>
@@ -1235,6 +1510,111 @@ const TransactionReview = ({ currentClient, onNotify }) => {
           </div>
         </div>
       )}
+
+      {/* Advanced Filters Modal */}
+      {showAdvancedFilters && (
+        <div className="category-picker-overlay" onClick={() => setShowAdvancedFilters(false)}>
+          <div className="category-picker advanced-filters-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Advanced Filters</h3>
+              {hasActiveAdvancedFilters && (
+                <button className="text-btn" onClick={clearAdvancedFilters}>
+                  Clear All
+                </button>
+              )}
+            </div>
+            <div className="picker-content">
+              <div className="settings-form" style={{ gap: '16px' }}>
+                <div className="form-group">
+                  <label>Search</label>
+                  <div className="search-input">
+                    <Search size={16} />
+                    <input
+                      type="text"
+                      placeholder="Search description or merchant..."
+                      value={advancedFilters.searchTerm}
+                      onChange={(e) => setAdvancedFilters(prev => ({ ...prev, searchTerm: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Min Amount ($)</label>
+                    <input
+                      type="number"
+                      placeholder="0.00"
+                      value={advancedFilters.minAmount}
+                      onChange={(e) => setAdvancedFilters(prev => ({ ...prev, minAmount: e.target.value }))}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Max Amount ($)</label>
+                    <input
+                      type="number"
+                      placeholder="10000.00"
+                      value={advancedFilters.maxAmount}
+                      onChange={(e) => setAdvancedFilters(prev => ({ ...prev, maxAmount: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Date From</label>
+                    <input
+                      type="date"
+                      value={advancedFilters.dateFrom}
+                      onChange={(e) => setAdvancedFilters(prev => ({ ...prev, dateFrom: e.target.value }))}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Date To</label>
+                    <input
+                      type="date"
+                      value={advancedFilters.dateTo}
+                      onChange={(e) => setAdvancedFilters(prev => ({ ...prev, dateTo: e.target.value }))}
+                    />
+                  </div>
+                </div>
+                <div className="form-group">
+                  <label>Category</label>
+                  <select
+                    value={advancedFilters.category}
+                    onChange={(e) => setAdvancedFilters(prev => ({ ...prev, category: e.target.value }))}
+                  >
+                    <option value="all">All Categories</option>
+                    <optgroup label="Expenses">
+                      {Object.entries(CRA_CATEGORIES.expenses).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Income">
+                      {Object.entries(CRA_CATEGORIES.income).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="picker-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span className="filter-count">
+                {filteredTransactions.length} transaction{filteredTransactions.length !== 1 ? 's' : ''} matching
+              </span>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button className="secondary-btn" onClick={() => setShowAdvancedFilters(false)}>
+                  Close
+                </button>
+                <button className="primary-btn" onClick={() => {
+                  setShowAdvancedFilters(false);
+                  onNotify?.('Filters applied.');
+                }}>
+                  Apply Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1243,52 +1623,244 @@ const TransactionReview = ({ currentClient, onNotify }) => {
 // COMPONENT: CLIENT QUESTIONS
 // ============================================================================
 
-const QuestionsView = ({ currentClient, onNotify }) => {
+const QuestionsView = ({ currentClient, onNotify, questions, setQuestions }) => {
+  const [showNewQuestionModal, setShowNewQuestionModal] = useState(false);
+  const [showEditQuestionModal, setShowEditQuestionModal] = useState(false);
+  const [editingQuestion, setEditingQuestion] = useState(null);
+  const [draftQuestion, setDraftQuestion] = useState({
+    transaction: '',
+    question: ''
+  });
+
+  const pendingCount = questions.filter(q => q.status === 'pending').length;
+
+  const handleCreateQuestion = () => {
+    if (!draftQuestion.question.trim()) {
+      onNotify?.('Please enter a question.');
+      return;
+    }
+
+    const newQuestion = {
+      id: Date.now(),
+      transaction: draftQuestion.transaction.trim() || 'General Question',
+      question: draftQuestion.question.trim(),
+      status: 'pending',
+      createdAt: new Date().toISOString().split('T')[0],
+      answer: null
+    };
+
+    setQuestions(prev => [newQuestion, ...prev]);
+    setDraftQuestion({ transaction: '', question: '' });
+    setShowNewQuestionModal(false);
+    onNotify?.('Question added.');
+  };
+
+  const handleEditQuestion = () => {
+    if (!draftQuestion.question.trim()) {
+      onNotify?.('Please enter a question.');
+      return;
+    }
+
+    setQuestions(prev => prev.map(q =>
+      q.id === editingQuestion.id
+        ? { ...q, transaction: draftQuestion.transaction.trim() || 'General Question', question: draftQuestion.question.trim() }
+        : q
+    ));
+    setShowEditQuestionModal(false);
+    setEditingQuestion(null);
+    setDraftQuestion({ transaction: '', question: '' });
+    onNotify?.('Question updated.');
+  };
+
+  const handleDeleteQuestion = (question) => {
+    setQuestions(prev => prev.filter(q => q.id !== question.id));
+    onNotify?.('Question removed.');
+  };
+
+  const handleMarkAnswered = (question) => {
+    setQuestions(prev => prev.map(q =>
+      q.id === question.id
+        ? { ...q, status: 'answered', answer: 'Client confirmed via email.' }
+        : q
+    ));
+    onNotify?.('Question marked as answered.');
+  };
+
+  const handleSendQuestions = () => {
+    const pendingQuestions = questions.filter(q => q.status === 'pending');
+    if (pendingQuestions.length === 0) {
+      onNotify?.('No pending questions to send.');
+      return;
+    }
+    onNotify?.(`${pendingQuestions.length} question${pendingQuestions.length > 1 ? 's' : ''} sent to client.`);
+  };
+
+  const openEditModal = (question) => {
+    setEditingQuestion(question);
+    setDraftQuestion({ transaction: question.transaction, question: question.question });
+    setShowEditQuestionModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditQuestionModal(false);
+    setEditingQuestion(null);
+    setDraftQuestion({ transaction: '', question: '' });
+  };
+
   return (
     <div className="questions-view">
       <div className="view-header">
         <div>
           <h1>Client Questions</h1>
           <p className="view-subtitle">
-            {currentClient ? currentClient.name : 'All Clients'} • {MOCK_QUESTIONS.filter(q => q.status === 'pending').length} pending
+            {currentClient ? currentClient.name : 'All Clients'} • {pendingCount} pending
           </p>
         </div>
-        <button className="primary-btn" onClick={() => onNotify?.('Questions sent to client.')}>
-          <Send size={18} />
-          Send to Client
-        </button>
+        <div className="header-actions">
+          <button className="secondary-btn" onClick={() => setShowNewQuestionModal(true)}>
+            <Plus size={18} />
+            New Question
+          </button>
+          <button className="primary-btn" onClick={handleSendQuestions}>
+            <Send size={18} />
+            Send to Client
+          </button>
+        </div>
       </div>
 
       <div className="questions-list">
-        {MOCK_QUESTIONS.map(q => (
-          <div key={q.id} className={`question-card ${q.status}`}>
-            <div className="question-header">
-              <span className="question-transaction">{q.transaction}</span>
-              <span className={`question-status ${q.status}`}>
-                {q.status === 'pending' ? <Clock size={14} /> : <CheckCircle2 size={14} />}
-                {q.status}
-              </span>
+        {questions.length === 0 ? (
+          <div className="empty-state">
+            <MessageSquare size={48} />
+            <h3>No questions yet</h3>
+            <p>Create a question to ask your client for clarification</p>
+            <button className="primary-btn" onClick={() => setShowNewQuestionModal(true)}>
+              <Plus size={18} />
+              Add Question
+            </button>
+          </div>
+        ) : (
+          questions.map(q => (
+            <div key={q.id} className={`question-card ${q.status}`}>
+              <div className="question-header">
+                <span className="question-transaction">{q.transaction}</span>
+                <span className={`question-status ${q.status}`}>
+                  {q.status === 'pending' ? <Clock size={14} /> : <CheckCircle2 size={14} />}
+                  {q.status}
+                </span>
+              </div>
+              <p className="question-text">{q.question}</p>
+              {q.answer && (
+                <div className="question-answer">
+                  <strong>Client Answer:</strong> {q.answer}
+                </div>
+              )}
+              <div className="question-footer">
+                <span className="question-date">Created {q.createdAt}</span>
+                <div className="question-actions">
+                  {q.status === 'pending' && (
+                    <button className="icon-btn" onClick={() => handleMarkAnswered(q)} title="Mark as answered">
+                      <Check size={16} />
+                    </button>
+                  )}
+                  <button className="icon-btn" onClick={() => openEditModal(q)} title="Edit question">
+                    <Edit3 size={16} />
+                  </button>
+                  <button className="icon-btn" onClick={() => handleDeleteQuestion(q)} title="Delete question">
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
             </div>
-            <p className="question-text">{q.question}</p>
-            {q.answer && (
-              <div className="question-answer">
-                <strong>Client Answer:</strong> {q.answer}
+          ))
+        )}
+      </div>
+
+      {/* New Question Modal */}
+      {showNewQuestionModal && (
+        <div className="category-picker-overlay" onClick={() => setShowNewQuestionModal(false)}>
+          <div className="category-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Add New Question</h3>
+            </div>
+            <div className="picker-content">
+              <div className="settings-form" style={{ gap: '16px' }}>
+                <div className="form-group">
+                  <label>Related Transaction (Optional)</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Uber Eats - Jan 15"
+                    value={draftQuestion.transaction}
+                    onChange={(e) => setDraftQuestion(prev => ({ ...prev, transaction: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Question for Client</label>
+                  <textarea
+                    placeholder="Enter your question..."
+                    value={draftQuestion.question}
+                    onChange={(e) => setDraftQuestion(prev => ({ ...prev, question: e.target.value }))}
+                    autoFocus
+                    rows={4}
+                    style={{ resize: 'vertical', minHeight: '100px' }}
+                  />
+                </div>
               </div>
-            )}
-            <div className="question-footer">
-              <span className="question-date">Created {q.createdAt}</span>
-              <div className="question-actions">
-                <button className="icon-btn" onClick={() => onNotify?.('Edit question coming soon.')}>
-                  <Edit3 size={16} />
-                </button>
-                <button className="icon-btn" onClick={() => onNotify?.('Question removed.')}>
-                  <Trash2 size={16} />
-                </button>
-              </div>
+            </div>
+            <div className="picker-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="secondary-btn" onClick={() => setShowNewQuestionModal(false)}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={handleCreateQuestion}>
+                Add Question
+              </button>
             </div>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+
+      {/* Edit Question Modal */}
+      {showEditQuestionModal && editingQuestion && (
+        <div className="category-picker-overlay" onClick={closeEditModal}>
+          <div className="category-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Edit Question</h3>
+            </div>
+            <div className="picker-content">
+              <div className="settings-form" style={{ gap: '16px' }}>
+                <div className="form-group">
+                  <label>Related Transaction</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., Uber Eats - Jan 15"
+                    value={draftQuestion.transaction}
+                    onChange={(e) => setDraftQuestion(prev => ({ ...prev, transaction: e.target.value }))}
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Question for Client</label>
+                  <textarea
+                    placeholder="Enter your question..."
+                    value={draftQuestion.question}
+                    onChange={(e) => setDraftQuestion(prev => ({ ...prev, question: e.target.value }))}
+                    autoFocus
+                    rows={4}
+                    style={{ resize: 'vertical', minHeight: '100px' }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="picker-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="secondary-btn" onClick={closeEditModal}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={handleEditQuestion}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1399,10 +1971,93 @@ const ReportsView = ({ currentClient, onNotify }) => {
 // COMPONENT: AI RULES
 // ============================================================================
 
-const RulesView = ({ onNotify }) => {
-  const rules = [
-    { id: 1, merchant: 'UBER *EATS', category: 'Meals & Entertainment', scope: 'Firm-wide', uses: 1 }
+const RulesView = ({ onNotify, rules, setRules }) => {
+  const [showNewRuleModal, setShowNewRuleModal] = useState(false);
+  const [showEditRuleModal, setShowEditRuleModal] = useState(false);
+  const [editingRule, setEditingRule] = useState(null);
+  const [draftRule, setDraftRule] = useState({
+    merchant: '',
+    category: 'EXP-MEAL',
+    scope: 'Firm-wide'
+  });
+
+  const categoryOptions = [
+    ...Object.entries(CRA_CATEGORIES.income).map(([code, cat]) => ({ code, name: cat.name, group: 'Income' })),
+    ...Object.entries(CRA_CATEGORIES.expenses).map(([code, cat]) => ({ code, name: cat.name, group: 'Expenses' })),
+    ...Object.entries(CRA_CATEGORIES.personal).map(([code, cat]) => ({ code, name: cat.name, group: 'Personal' })),
+    ...Object.entries(CRA_CATEGORIES.transfer).map(([code, cat]) => ({ code, name: cat.name, group: 'Transfers' })),
+    ...Object.entries(CRA_CATEGORIES.excluded).map(([code, cat]) => ({ code, name: cat.name, group: 'Excluded' })),
   ];
+
+  const getCategoryName = (code) => {
+    const category = categoryOptions.find(c => c.code === code);
+    return category ? category.name : code;
+  };
+
+  const handleCreateRule = () => {
+    if (!draftRule.merchant.trim()) {
+      onNotify?.('Please enter a merchant pattern.');
+      return;
+    }
+
+    const newRule = {
+      id: Date.now(),
+      merchant: draftRule.merchant.trim().toUpperCase(),
+      category: getCategoryName(draftRule.category),
+      categoryCode: draftRule.category,
+      scope: draftRule.scope,
+      uses: 0
+    };
+
+    setRules(prev => [...prev, newRule]);
+    setDraftRule({ merchant: '', category: 'EXP-MEAL', scope: 'Firm-wide' });
+    setShowNewRuleModal(false);
+    onNotify?.(`Rule created for "${newRule.merchant}".`);
+  };
+
+  const handleEditRule = () => {
+    if (!draftRule.merchant.trim()) {
+      onNotify?.('Please enter a merchant pattern.');
+      return;
+    }
+
+    setRules(prev => prev.map(r =>
+      r.id === editingRule.id
+        ? {
+            ...r,
+            merchant: draftRule.merchant.trim().toUpperCase(),
+            category: getCategoryName(draftRule.category),
+            categoryCode: draftRule.category,
+            scope: draftRule.scope
+          }
+        : r
+    ));
+    setShowEditRuleModal(false);
+    setEditingRule(null);
+    setDraftRule({ merchant: '', category: 'EXP-MEAL', scope: 'Firm-wide' });
+    onNotify?.('Rule updated.');
+  };
+
+  const handleDeleteRule = (rule) => {
+    setRules(prev => prev.filter(r => r.id !== rule.id));
+    onNotify?.(`Rule for "${rule.merchant}" removed.`);
+  };
+
+  const openEditModal = (rule) => {
+    setEditingRule(rule);
+    setDraftRule({
+      merchant: rule.merchant,
+      category: rule.categoryCode || 'EXP-MEAL',
+      scope: rule.scope
+    });
+    setShowEditRuleModal(true);
+  };
+
+  const closeEditModal = () => {
+    setShowEditRuleModal(false);
+    setEditingRule(null);
+    setDraftRule({ merchant: '', category: 'EXP-MEAL', scope: 'Firm-wide' });
+  };
 
   return (
     <div className="rules-view">
@@ -1411,7 +2066,7 @@ const RulesView = ({ onNotify }) => {
           <h1>AI Rules</h1>
           <p className="view-subtitle">Manage categorization rules and teach the AI</p>
         </div>
-        <button className="primary-btn" onClick={() => onNotify?.('New rule creator coming soon.')}>
+        <button className="primary-btn" onClick={() => setShowNewRuleModal(true)}>
           <Plus size={18} />
           Create Rule
         </button>
@@ -1421,7 +2076,7 @@ const RulesView = ({ onNotify }) => {
         <div className="rules-section">
           <h3>Merchant → Category Rules</h3>
           <p className="section-description">When a transaction matches a merchant, automatically suggest this category.</p>
-          
+
           <div className="rules-table">
             <div className="rules-header">
               <span>Merchant Pattern</span>
@@ -1430,35 +2085,47 @@ const RulesView = ({ onNotify }) => {
               <span>Uses</span>
               <span></span>
             </div>
-            {rules.map(rule => (
-              <div key={rule.id} className="rule-row">
-                <span className="rule-merchant">
-                  <code>{rule.merchant}</code>
-                </span>
-                <span className="rule-category">{rule.category}</span>
-                <span className="rule-scope">
-                  <span className={`scope-badge ${rule.scope.includes('Client') ? 'client' : 'firm'}`}>
-                    {rule.scope}
-                  </span>
-                </span>
-                <span className="rule-uses">{rule.uses} matches</span>
-                <span className="rule-actions">
-                  <button className="icon-btn" onClick={() => onNotify?.('Edit rule coming soon.')}>
-                    <Edit3 size={16} />
-                  </button>
-                  <button className="icon-btn" onClick={() => onNotify?.('Rule removed.')}>
-                    <Trash2 size={16} />
-                  </button>
-                </span>
+            {rules.length === 0 ? (
+              <div className="empty-state" style={{ padding: '40px 20px' }}>
+                <Sparkles size={48} />
+                <h3>No rules yet</h3>
+                <p>Create rules to automatically categorize transactions</p>
+                <button className="primary-btn" onClick={() => setShowNewRuleModal(true)}>
+                  <Plus size={18} />
+                  Create First Rule
+                </button>
               </div>
-            ))}
+            ) : (
+              rules.map(rule => (
+                <div key={rule.id} className="rule-row">
+                  <span className="rule-merchant">
+                    <code>{rule.merchant}</code>
+                  </span>
+                  <span className="rule-category">{rule.category}</span>
+                  <span className="rule-scope">
+                    <span className={`scope-badge ${rule.scope.includes('Client') ? 'client' : 'firm'}`}>
+                      {rule.scope}
+                    </span>
+                  </span>
+                  <span className="rule-uses">{rule.uses} matches</span>
+                  <span className="rule-actions">
+                    <button className="icon-btn" onClick={() => openEditModal(rule)} title="Edit rule">
+                      <Edit3 size={16} />
+                    </button>
+                    <button className="icon-btn" onClick={() => handleDeleteRule(rule)} title="Delete rule">
+                      <Trash2 size={16} />
+                    </button>
+                  </span>
+                </div>
+              ))
+            )}
           </div>
         </div>
 
         <div className="rules-section">
           <h3>AI Suggestions</h3>
           <p className="section-description">Based on your review patterns, the AI suggests these new rules.</p>
-          
+
           <div className="suggestions-list">
             <div className="suggestion-card">
               <div className="suggestion-content">
@@ -1472,6 +2139,160 @@ const RulesView = ({ onNotify }) => {
           </div>
         </div>
       </div>
+
+      {/* New Rule Modal */}
+      {showNewRuleModal && (
+        <div className="category-picker-overlay" onClick={() => setShowNewRuleModal(false)}>
+          <div className="category-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Create New Rule</h3>
+            </div>
+            <div className="picker-content">
+              <div className="settings-form" style={{ gap: '16px' }}>
+                <div className="form-group">
+                  <label>Merchant Pattern</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., UBER *EATS, AMAZON, STARBUCKS"
+                    value={draftRule.merchant}
+                    onChange={(e) => setDraftRule(prev => ({ ...prev, merchant: e.target.value }))}
+                    autoFocus
+                  />
+                  <span className="form-hint">Use * as wildcard. Pattern is case-insensitive.</span>
+                </div>
+                <div className="form-group">
+                  <label>Category</label>
+                  <select
+                    value={draftRule.category}
+                    onChange={(e) => setDraftRule(prev => ({ ...prev, category: e.target.value }))}
+                  >
+                    <optgroup label="Expenses">
+                      {Object.entries(CRA_CATEGORIES.expenses).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Income">
+                      {Object.entries(CRA_CATEGORIES.income).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Personal">
+                      {Object.entries(CRA_CATEGORIES.personal).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Transfers">
+                      {Object.entries(CRA_CATEGORIES.transfer).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Excluded">
+                      {Object.entries(CRA_CATEGORIES.excluded).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Scope</label>
+                  <select
+                    value={draftRule.scope}
+                    onChange={(e) => setDraftRule(prev => ({ ...prev, scope: e.target.value }))}
+                  >
+                    <option value="Firm-wide">Firm-wide (all clients)</option>
+                    <option value="Client-specific">Client-specific</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="picker-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="secondary-btn" onClick={() => setShowNewRuleModal(false)}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={handleCreateRule}>
+                Create Rule
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Rule Modal */}
+      {showEditRuleModal && editingRule && (
+        <div className="category-picker-overlay" onClick={closeEditModal}>
+          <div className="category-picker" onClick={(e) => e.stopPropagation()}>
+            <div className="picker-header">
+              <h3>Edit Rule</h3>
+            </div>
+            <div className="picker-content">
+              <div className="settings-form" style={{ gap: '16px' }}>
+                <div className="form-group">
+                  <label>Merchant Pattern</label>
+                  <input
+                    type="text"
+                    placeholder="e.g., UBER *EATS, AMAZON, STARBUCKS"
+                    value={draftRule.merchant}
+                    onChange={(e) => setDraftRule(prev => ({ ...prev, merchant: e.target.value }))}
+                    autoFocus
+                  />
+                  <span className="form-hint">Use * as wildcard. Pattern is case-insensitive.</span>
+                </div>
+                <div className="form-group">
+                  <label>Category</label>
+                  <select
+                    value={draftRule.category}
+                    onChange={(e) => setDraftRule(prev => ({ ...prev, category: e.target.value }))}
+                  >
+                    <optgroup label="Expenses">
+                      {Object.entries(CRA_CATEGORIES.expenses).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Income">
+                      {Object.entries(CRA_CATEGORIES.income).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Personal">
+                      {Object.entries(CRA_CATEGORIES.personal).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Transfers">
+                      {Object.entries(CRA_CATEGORIES.transfer).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Excluded">
+                      {Object.entries(CRA_CATEGORIES.excluded).map(([code, cat]) => (
+                        <option key={code} value={code}>{cat.name}</option>
+                      ))}
+                    </optgroup>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Scope</label>
+                  <select
+                    value={draftRule.scope}
+                    onChange={(e) => setDraftRule(prev => ({ ...prev, scope: e.target.value }))}
+                  >
+                    <option value="Firm-wide">Firm-wide (all clients)</option>
+                    <option value="Client-specific">Client-specific</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="picker-footer" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button className="secondary-btn" onClick={closeEditModal}>
+                Cancel
+              </button>
+              <button className="primary-btn" onClick={handleEditRule}>
+                Save Changes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -1717,12 +2538,22 @@ const INITIAL_TEAM_MEMBERS = [
   { id: 1, name: 'Jessica Davis', email: 'jessica@davis-cpa.com', role: 'Admin Partner', initials: 'JD' }
 ];
 
+const INITIAL_QUESTIONS = [
+  { id: 1, transaction: 'Uber Eats - Jan 15', question: 'Was this meal for a business meeting?', status: 'pending', createdAt: '2024-01-16', answer: null }
+];
+
+const INITIAL_RULES = [
+  { id: 1, merchant: 'UBER *EATS', category: 'Meals & Entertainment', categoryCode: 'EXP-MEAL', scope: 'Firm-wide', uses: 1 }
+];
+
 const AccountingOfficeDashboard = () => {
   const [activeView, setActiveView] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentClient, setCurrentClient] = useState(null);
   const [clients, setClients] = useState(MOCK_CLIENTS);
   const [teamMembers, setTeamMembers] = useState(INITIAL_TEAM_MEMBERS);
+  const [questions, setQuestions] = useState(INITIAL_QUESTIONS);
+  const [rules, setRules] = useState(INITIAL_RULES);
   const [toast, setToast] = useState(null);
 
   const handleNotify = useCallback((message) => {
@@ -1797,11 +2628,11 @@ const AccountingOfficeDashboard = () => {
       case 'review':
         return <TransactionReview currentClient={currentClient} onNotify={handleNotify} />;
       case 'questions':
-        return <QuestionsView currentClient={currentClient} onNotify={handleNotify} />;
+        return <QuestionsView currentClient={currentClient} onNotify={handleNotify} questions={questions} setQuestions={setQuestions} />;
       case 'reports':
         return <ReportsView currentClient={currentClient} onNotify={handleNotify} />;
       case 'rules':
-        return <RulesView onNotify={handleNotify} />;
+        return <RulesView onNotify={handleNotify} rules={rules} setRules={setRules} />;
       case 'settings':
         return <SettingsView teamMembers={teamMembers} setTeamMembers={setTeamMembers} onNotify={handleNotify} />;
       default:
