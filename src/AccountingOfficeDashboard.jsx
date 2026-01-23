@@ -337,7 +337,7 @@ const MOCK_DOCUMENTS = [
   { id: 2, name: 'td-chequing-jan-2024.pdf', type: 'Bank Statement', status: 'processed', pages: 4, transactions: 18, uploadedAt: '2024-01-15 10:30 AM' },
   { id: 3, name: 'receipt-amazon-jan14.jpg', type: 'Receipt', status: 'processed', pages: 1, transactions: 1, uploadedAt: '2024-01-15 10:32 AM' },
   { id: 4, name: 'T4-2023-employer.pdf', type: 'Tax Slip', status: 'processed', pages: 1, transactions: null, uploadedAt: '2024-01-14 2:15 PM' },
-  { id: 5, name: 'bookkeeping-export.xlsx', type: 'Spreadsheet', status: 'processing', pages: null, transactions: null, uploadedAt: '2024-01-18 9:00 AM' },
+  { id: 5, name: 'bookkeeping-export.xlsx', type: 'Spreadsheet', status: 'processed', pages: 3, transactions: 156, uploadedAt: '2024-01-18 9:00 AM' },
 ];
 
 const MOCK_QUESTIONS = [
