@@ -154,9 +154,19 @@
           transition: all var(--transition-fast);
         }
 
-        .collapse-btn:hover {
+        .collapse-btn:hover:not(:disabled) {
           background: var(--bg-hover);
           color: var(--text-primary);
+        }
+
+        .collapse-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .collapse-btn:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .sidebar.collapsed .logo-text,
@@ -205,9 +215,19 @@
           padding: 12px;
         }
 
-        .nav-item:hover {
+        .nav-item:hover:not(:disabled):not(.active) {
           background: var(--bg-tertiary);
           color: var(--text-primary);
+        }
+
+        .nav-item:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .nav-item:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: -2px;
         }
 
         .nav-item.active {
@@ -307,8 +327,18 @@
           font-size: 14px;
         }
 
-        .breadcrumb-link:hover {
+        .breadcrumb-link:hover:not(:disabled) {
           color: var(--text-primary);
+        }
+
+        .breadcrumb-link:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .breadcrumb-link:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .breadcrumb-current {
@@ -386,9 +416,19 @@
           transition: all var(--transition-fast);
         }
 
-        .header-btn:hover {
+        .header-btn:hover:not(:disabled) {
           background: var(--bg-hover);
           color: var(--text-primary);
+        }
+
+        .header-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .header-btn:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .notification-dot {
@@ -404,6 +444,22 @@
         /* ================================================================
            COMMON COMPONENTS
            ================================================================ */
+
+        /* Global button reset for consistent clickability */
+        button {
+          cursor: pointer;
+          user-select: none;
+          -webkit-tap-highlight-color: transparent;
+        }
+
+        button:disabled {
+          cursor: not-allowed;
+        }
+
+        /* Ensure all buttons are properly clickable */
+        button:not(:disabled):active {
+          transform: scale(0.98);
+        }
 
         .view-header {
           margin-bottom: 32px;
@@ -452,8 +508,18 @@
           transition: all var(--transition-fast);
         }
 
-        .primary-btn:hover {
+        .primary-btn:hover:not(:disabled) {
           background: var(--accent-primary-hover);
+        }
+
+        .primary-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .primary-btn:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .secondary-btn {
@@ -471,9 +537,19 @@
           transition: all var(--transition-fast);
         }
 
-        .secondary-btn:hover {
+        .secondary-btn:hover:not(:disabled) {
           background: var(--bg-hover);
           border-color: var(--border-strong);
+        }
+
+        .secondary-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .secondary-btn:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .text-btn {
@@ -489,8 +565,18 @@
           padding: 0;
         }
 
-        .text-btn:hover {
+        .text-btn:hover:not(:disabled) {
           color: var(--accent-primary-hover);
+        }
+
+        .text-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .text-btn:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .icon-btn {
@@ -507,9 +593,19 @@
           transition: all var(--transition-fast);
         }
 
-        .icon-btn:hover {
+        .icon-btn:hover:not(:disabled) {
           background: var(--bg-hover);
           color: var(--text-primary);
+        }
+
+        .icon-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .icon-btn:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .status-pill {
@@ -565,9 +661,20 @@
           text-align: left;
         }
 
-        .queue-card:hover {
+        .queue-card:hover:not(:disabled) {
           border-color: var(--border-default);
           transform: translateY(-2px);
+        }
+
+        .queue-card:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .queue-card:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .queue-icon {
@@ -643,8 +750,18 @@
           text-align: left;
         }
 
-        .client-row:hover {
+        .client-row:hover:not(:disabled) {
           background: var(--bg-hover);
+        }
+
+        .client-row:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .client-row:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: -2px;
         }
 
         .client-avatar {
@@ -818,8 +935,18 @@
           text-transform: capitalize;
         }
 
-        .filter-pill:hover {
+        .filter-pill:hover:not(:disabled):not(.active) {
           border-color: var(--border-default);
+        }
+
+        .filter-pill:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .filter-pill:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .filter-pill.active {
@@ -1232,8 +1359,18 @@
           transition: all var(--transition-fast);
         }
 
-        .filter-tab:hover {
+        .filter-tab:hover:not(:disabled):not(.active) {
           background: var(--bg-tertiary);
+        }
+
+        .filter-tab:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .filter-tab:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .filter-tab.active {
@@ -1426,9 +1563,19 @@
           color: var(--accent-primary);
         }
 
-        .approve-btn:hover {
+        .approve-btn:hover:not(:disabled) {
           background: var(--accent-primary);
           color: white;
+        }
+
+        .approve-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .approve-btn:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .reject-btn {
@@ -1436,9 +1583,19 @@
           color: var(--accent-error);
         }
 
-        .reject-btn:hover {
+        .reject-btn:hover:not(:disabled) {
           background: var(--accent-error);
           color: white;
+        }
+
+        .reject-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .reject-btn:focus-visible {
+          outline: 2px solid var(--accent-error);
+          outline-offset: 2px;
         }
 
         .approved-icon {
@@ -1501,8 +1658,18 @@
           transition: all var(--transition-fast);
         }
 
-        .category-selector:hover {
+        .category-selector:hover:not(:disabled) {
           border-color: var(--accent-primary);
+        }
+
+        .category-selector:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .category-selector:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .cra-code {
@@ -1653,8 +1820,18 @@
           color: white;
         }
 
-        .action-btn.primary:hover {
+        .action-btn.primary:hover:not(:disabled) {
           background: var(--accent-primary-hover);
+        }
+
+        .action-btn.primary:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .action-btn.primary:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .action-btn.secondary {
@@ -1663,8 +1840,18 @@
           color: var(--text-primary);
         }
 
-        .action-btn.secondary:hover {
+        .action-btn.secondary:hover:not(:disabled) {
           background: var(--bg-hover);
+        }
+
+        .action-btn.secondary:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .action-btn.secondary:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .rule-btn {
@@ -1683,8 +1870,18 @@
           transition: all var(--transition-fast);
         }
 
-        .rule-btn:hover {
+        .rule-btn:hover:not(:disabled) {
           background: rgba(139, 92, 246, 0.15);
+        }
+
+        .rule-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .rule-btn:focus-visible {
+          outline: 2px solid var(--accent-purple);
+          outline-offset: 2px;
         }
 
         /* Category Picker Modal */
@@ -1779,8 +1976,18 @@
           text-align: left;
         }
 
-        .category-option:hover {
+        .category-option:hover:not(:disabled) {
           background: var(--bg-tertiary);
+        }
+
+        .category-option:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .category-option:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: -2px;
         }
 
         .category-option.selected {
@@ -2330,9 +2537,19 @@
           transition: all var(--transition-fast);
         }
 
-        .client-selector-btn:hover {
+        .client-selector-btn:hover:not(:disabled) {
           background: var(--bg-tertiary);
           border-color: var(--accent-primary);
+        }
+
+        .client-selector-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .client-selector-btn:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: 2px;
         }
 
         .client-selector-btn svg.rotated {
@@ -2366,8 +2583,18 @@
           text-align: left;
         }
 
-        .client-option:hover {
+        .client-option:hover:not(:disabled) {
           background: var(--bg-tertiary);
+        }
+
+        .client-option:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .client-option:focus-visible {
+          outline: 2px solid var(--accent-primary);
+          outline-offset: -2px;
         }
 
         .client-option.selected {
