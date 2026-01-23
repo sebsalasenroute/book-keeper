@@ -1534,7 +1534,7 @@
           font-size: 10px;
         }
 
-        .flag-badge.50\\%-limitation { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
+        .flag-badge.meal-limitation { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
         .flag-badge.needs-receipt { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
         .flag-badge.needs-km-log { background: rgba(139, 92, 246, 0.2); color: #8b5cf6; }
         .flag-badge.low-confidence { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
