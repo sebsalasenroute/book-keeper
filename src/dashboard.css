@@ -407,6 +407,10 @@
 
         .view-header {
           margin-bottom: 32px;
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 16px;
         }
 
         .view-header.compact {
@@ -2301,6 +2305,94 @@
 
         input:checked + .slider:before {
           transform: translateX(22px);
+        }
+
+        /* ================================================================
+           CLIENT SELECTOR (UPLOAD CENTER)
+           ================================================================ */
+
+        .client-selector-container {
+          position: relative;
+        }
+
+        .client-selector-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-md);
+          color: var(--text-primary);
+          font-size: 14px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all var(--transition-fast);
+        }
+
+        .client-selector-btn:hover {
+          background: var(--bg-tertiary);
+          border-color: var(--accent-primary);
+        }
+
+        .client-selector-btn svg.rotated {
+          transform: rotate(180deg);
+        }
+
+        .client-selector-dropdown {
+          position: absolute;
+          top: calc(100% + 8px);
+          right: 0;
+          width: 280px;
+          max-height: 320px;
+          overflow-y: auto;
+          background: var(--bg-secondary);
+          border: 1px solid var(--border-default);
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-xl);
+          z-index: 100;
+        }
+
+        .client-option {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 12px 16px;
+          background: none;
+          border: none;
+          cursor: pointer;
+          transition: background var(--transition-fast);
+          text-align: left;
+        }
+
+        .client-option:hover {
+          background: var(--bg-tertiary);
+        }
+
+        .client-option.selected {
+          background: rgba(34, 197, 94, 0.1);
+        }
+
+        .client-option-info {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .client-option-name {
+          font-size: 14px;
+          font-weight: 500;
+          color: var(--text-primary);
+        }
+
+        .client-option-type {
+          font-size: 12px;
+          color: var(--text-tertiary);
+        }
+
+        .client-option svg {
+          color: var(--accent-primary);
         }
 
         /* ================================================================

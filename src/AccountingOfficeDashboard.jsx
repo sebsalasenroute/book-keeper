@@ -697,11 +697,12 @@ const ClientsView = ({ setCurrentClient, setActiveView }) => {
 // COMPONENT: UPLOAD CENTER
 // ============================================================================
 
-const UploadCenter = ({ currentClient }) => {
+const UploadCenter = ({ currentClient, setCurrentClient }) => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
   const [uploadedDocuments, setUploadedDocuments] = useState(MOCK_DOCUMENTS);
+  const [clientSelectorOpen, setClientSelectorOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   const getFileType = (fileName) => {
@@ -785,6 +786,36 @@ const UploadCenter = ({ currentClient }) => {
           <p className="view-subtitle">
             {currentClient ? `Uploading for ${currentClient.name}` : 'Select a client to upload documents'}
           </p>
+        </div>
+        <div className="client-selector-container">
+          <button
+            className="client-selector-btn"
+            onClick={() => setClientSelectorOpen(!clientSelectorOpen)}
+          >
+            <Users size={18} />
+            {currentClient ? currentClient.name : 'Select Client'}
+            <ChevronDown size={16} className={clientSelectorOpen ? 'rotated' : ''} />
+          </button>
+          {clientSelectorOpen && (
+            <div className="client-selector-dropdown">
+              {MOCK_CLIENTS.map(client => (
+                <button
+                  key={client.id}
+                  className={`client-option ${currentClient?.id === client.id ? 'selected' : ''}`}
+                  onClick={() => {
+                    setCurrentClient(client);
+                    setClientSelectorOpen(false);
+                  }}
+                >
+                  <div className="client-option-info">
+                    <span className="client-option-name">{client.name}</span>
+                    <span className="client-option-type">{client.type}</span>
+                  </div>
+                  {currentClient?.id === client.id && <Check size={16} />}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
@@ -1723,7 +1754,7 @@ const AccountingOfficeDashboard = () => {
       case 'clients':
         return <ClientsView setCurrentClient={setCurrentClient} setActiveView={setActiveView} />;
       case 'upload':
-        return <UploadCenter currentClient={currentClient} />;
+        return <UploadCenter currentClient={currentClient} setCurrentClient={setCurrentClient} />;
       case 'review':
         return <TransactionReview currentClient={currentClient} />;
       case 'questions':
