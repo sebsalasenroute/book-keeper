@@ -96,7 +96,7 @@ export default function ClientsPage() {
                   <td className="px-4 py-3 text-gray-600">{client.province}</td>
                   <td className="px-4 py-3 text-center">
                     {client.gstRegistered ? (
-                      <span className="text-green-600 text-xs font-medium">Yes</span>
+                      <span className="text-blue-600 text-xs font-medium">Yes</span>
                     ) : (
                       <span className="text-gray-400 text-xs">No</span>
                     )}

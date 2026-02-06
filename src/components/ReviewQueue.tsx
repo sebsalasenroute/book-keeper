@@ -375,7 +375,7 @@ export default function ReviewQueue({ role }: Props) {
                       </td>
                       <td className="px-3 py-2 text-center">
                         <span className={`text-xs font-medium ${
-                          (cls?.confidence || 0) >= 80 ? "text-green-600" :
+                          (cls?.confidence || 0) >= 80 ? "text-blue-600" :
                           (cls?.confidence || 0) >= 50 ? "text-amber-600" : "text-red-500"
                         }`}>
                           {cls?.confidence ?? "-"}%
@@ -562,7 +562,7 @@ function StateBadge({ state }: { state: string }) {
     NEW: "bg-gray-100 text-gray-600",
     SUGGESTED: "bg-blue-50 text-blue-600",
     PREPARED: "bg-amber-50 text-amber-600",
-    REVIEWED: "bg-green-50 text-green-600",
+    REVIEWED: "bg-blue-50 text-blue-600",
   };
   return (
     <span className={`text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap ${colors[state] || ""}`}>

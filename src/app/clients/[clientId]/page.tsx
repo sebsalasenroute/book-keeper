@@ -82,7 +82,7 @@ export default function ClientDetailPage() {
           {client.gstRegistered && (
             <>
               <span>•</span>
-              <span className="text-green-600">GST Registered</span>
+              <span className="text-blue-600">GST Registered</span>
             </>
           )}
         </div>
@@ -170,7 +170,7 @@ function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
     UPLOADED: "bg-gray-100 text-gray-600",
     PROCESSING: "bg-blue-50 text-blue-600",
-    READY: "bg-green-50 text-green-600",
+    READY: "bg-blue-50 text-blue-600",
     FAILED: "bg-red-50 text-red-600",
   };
   return (
