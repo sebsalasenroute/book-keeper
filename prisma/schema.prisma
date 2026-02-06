@@ -1,0 +1,176 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  JUNIOR
+  SENIOR
+}
+
+enum EntityType {
+  SOLE_PROP
+  CORP
+  PARTNERSHIP
+}
+
+enum DocumentStatus {
+  UPLOADED
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum TransactionState {
+  NEW
+  SUGGESTED
+  PREPARED
+  REVIEWED
+}
+
+enum ClassificationSource {
+  PRIOR_YEAR
+  RULE
+  AI
+  MANUAL
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+model Tenant {
+  id          String       @id @default(uuid())
+  name        String
+  users       User[]
+  clients     Client[]
+  auditLogs   AuditLog[]
+  vendorRules VendorRule[]
+  createdAt   DateTime     @default(now())
+}
+
+model User {
+  id        String     @id @default(uuid())
+  tenantId  String
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  email     String     @unique
+  name      String
+  role      Role
+  auditLogs AuditLog[]
+  createdAt DateTime   @default(now())
+}
+
+model Client {
+  id            String       @id @default(uuid())
+  tenantId      String
+  tenant        Tenant       @relation(fields: [tenantId], references: [id])
+  name          String
+  entityType    EntityType
+  province      String
+  gstRegistered Boolean      @default(false)
+  engagements   Engagement[]
+  createdAt     DateTime     @default(now())
+}
+
+model Engagement {
+  id           String        @id @default(uuid())
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id])
+  year         Int
+  documents    Document[]
+  transactions Transaction[]
+  createdAt    DateTime      @default(now())
+}
+
+model Document {
+  id           String         @id @default(uuid())
+  engagementId String
+  engagement   Engagement     @relation(fields: [engagementId], references: [id])
+  filename     String
+  mimeType     String
+  status       DocumentStatus @default(UPLOADED)
+  uploadedAt   DateTime       @default(now())
+  extractions  Extraction[]
+  transactions Transaction[]
+}
+
+model Extraction {
+  id         String   @id @default(uuid())
+  documentId String
+  document   Document @relation(fields: [documentId], references: [id])
+  rawJson    Json
+  createdAt  DateTime @default(now())
+}
+
+model Transaction {
+  id              String           @id @default(uuid())
+  engagementId    String
+  engagement      Engagement       @relation(fields: [engagementId], references: [id])
+  documentId      String?
+  document        Document?        @relation(fields: [documentId], references: [id])
+  parentId        String?
+  parent          Transaction?     @relation("SplitTransaction", fields: [parentId], references: [id])
+  children        Transaction[]    @relation("SplitTransaction")
+  date            DateTime
+  vendorRaw       String
+  vendorNorm      String?
+  amountCents     Int
+  currency        String           @default("CAD")
+  description     String           @default("")
+  state           TransactionState @default(NEW)
+  classifications Classification[]
+  createdAt       DateTime         @default(now())
+}
+
+model Classification {
+  id            String               @id @default(uuid())
+  transactionId String
+  transaction   Transaction          @relation(fields: [transactionId], references: [id])
+  category      String
+  source        ClassificationSource
+  confidence    Int                  @default(0)
+  explanation   String               @default("")
+  createdAt     DateTime             @default(now())
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  tenantId   String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  entityType String
+  entityId   String
+  action     String
+  beforeJson Json?
+  afterJson  Json?
+  createdAt  DateTime @default(now())
+}
+
+model VendorRule {
+  id              String   @id @default(uuid())
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  vendorContains  String
+  category        String
+  appliesGlobally Boolean  @default(false)
+  createdAt       DateTime @default(now())
+}
+
+model JobQueue {
+  id        String    @id @default(uuid())
+  type      String
+  payload   Json
+  status    JobStatus @default(PENDING)
+  error     String?
+  createdAt DateTime  @default(now())
+  startedAt DateTime?
+  doneAt    DateTime?
+}
