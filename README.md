@@ -1,154 +1,100 @@
-# TaxFlow - Accounting Office Dashboard
+# Accounting App – MVP
 
-AI-powered internal accounting dashboard for Canadian tax preparation with CRA-aligned categorization.
+Internal bookkeeping workflow prototype: Client → Engagement → Upload Document → Background Processing → Normalized Transactions → Junior Prepares → Senior Reviews → Export.
 
-![Dashboard Preview](https://via.placeholder.com/800x400?text=TaxFlow+Dashboard)
+## Stack
 
-## Features
-
-- 🏢 **Firm Workspace** - Multi-client management with role-based access
-- 📄 **Document Ingestion** - PDF, CSV, XLSX, image support with OCR
-- 🤖 **AI Categorization** - Automatic transaction classification with CRA codes
-- ✅ **Review Workflow** - Approve, reject, split transactions with keyboard shortcuts
-- 📊 **Reports** - Generate client review packages and exports
-- 🔧 **Rules Engine** - Teach AI with merchant→category mappings
+- Next.js 16 (App Router) + TypeScript
+- TailwindCSS
+- Prisma + PostgreSQL
+- DB-backed job queue + worker script
 
 ## Quick Start
 
-### Prerequisites
+### 1. Start PostgreSQL
 
-- Node.js 18+ 
-- npm or yarn
-
-### Local Development
-
+Using Docker Compose:
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Open http://localhost:5173
+docker compose up -d
 ```
 
-### Build for Production
-
+Or start a local Postgres and create the database:
 ```bash
-npm run build
+psql -U postgres -c "CREATE USER bookkeeper WITH PASSWORD 'bookkeeper' CREATEDB;"
+psql -U postgres -c "CREATE DATABASE bookkeeper OWNER bookkeeper;"
 ```
 
----
-
-## 🚀 Deploy to Vercel
-
-### Option 1: One-Click Deploy
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/YOUR_USERNAME/taxflow-dashboard)
-
-### Option 2: Via Vercel CLI
+### 2. Install dependencies
 
 ```bash
-# Install Vercel CLI globally
-npm install -g vercel
-
-# Login to Vercel
-vercel login
-
-# Deploy (follow prompts)
-vercel
-
-# Deploy to production
-vercel --prod
+pnpm install
 ```
 
-### Option 3: Via GitHub Integration
+### 3. Run migrations and seed
 
-1. **Push to GitHub:**
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial commit"
-   git branch -M main
-   git remote add origin https://github.com/YOUR_USERNAME/taxflow-dashboard.git
-   git push -u origin main
-   ```
+```bash
+pnpm db:migrate
+pnpm seed
+```
 
-2. **Connect to Vercel:**
-   - Go to [vercel.com/new](https://vercel.com/new)
-   - Click "Import Git Repository"
-   - Select your repository
-   - Click "Deploy"
+### 4. Start the app
 
-3. **Automatic Deployments:**
-   - Every push to `main` triggers a production deployment
-   - Pull requests get preview deployments
+```bash
+pnpm dev      # starts web app on http://localhost:3000
+pnpm worker   # starts background job worker (separate terminal)
+```
 
----
+## Demo Credentials
+
+The login page offers two roles:
+- **Junior Bookkeeper** (Sarah Chen) – Prepares transactions for review
+- **Senior Reviewer** (David Thompson) – Reviews and approves transactions
+
+## Workflow
+
+1. Login as Junior or Senior
+2. Browse clients from the client list
+3. Upload documents (CSV fully parsed; PDF/XLSX simulated)
+4. Background worker processes documents into transactions with AI/rule classifications
+5. Junior reviews transactions in the review queue (categorize, prepare)
+6. Senior reviews prepared transactions (approve/review)
+7. Export reviewed transactions as CSV
+
+## Keyboard Shortcuts (Review Queue)
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` or `↓` / `↑` | Navigate rows |
+| `Space` | Toggle selection |
+| `Enter` | Prepare (junior) / Review (senior) focused row |
+| `1`-`9`, `0` | Quick-set category |
+| `Ctrl+A` | Select all |
+
+## Categories
+
+1. Advertising
+2. Meals & Entertainment
+3. Office Expenses
+4. Professional Fees
+5. Travel
+6. Vehicle
+7. Software / Subscriptions
+8. Bank Charges
+9. Owner Draw / Personal
+0. Uncategorized
 
 ## Project Structure
 
 ```
-taxflow-dashboard/
-├── public/
-│   └── favicon.svg
-├── src/
-│   ├── AccountingOfficeDashboard.jsx  # Main dashboard component
-│   ├── dashboard.css                   # All styles
-│   ├── App.jsx                         # App wrapper
-│   ├── main.jsx                        # React entry point
-│   └── index.css                       # Global reset
-├── index.html
-├── package.json
-├── vite.config.js
-└── README.md
+src/
+├── app/
+│   ├── api/           # API routes (auth, clients, documents, transactions, export)
+│   ├── clients/       # Client list, detail, upload, review, export pages
+│   └── login/         # Login page
+├── components/        # Shared components (Navbar, ReviewQueue)
+└── lib/               # Core libraries (db, auth, storage, classifier, csv-parser, constants)
+prisma/
+├── schema.prisma      # Data model
+├── seed.ts            # Demo data seed script
+└── migrations/        # Database migrations
 ```
-
-## Tech Stack
-
-- **React 18** - UI framework
-- **Vite** - Build tool & dev server
-- **Lucide React** - Icon library
-- **CSS Variables** - Theming system
-
-## Environment Variables
-
-For production features, create a `.env` file:
-
-```env
-VITE_API_URL=https://api.yourbackend.com
-VITE_OPENAI_API_KEY=sk-...  # For AI features
-```
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `⌘K` | Global search |
-| `⌘1` | Dashboard |
-| `⌘2` | Clients |
-| `⌘3` | Transaction Review |
-| `↑↓` | Navigate transactions |
-| `A` | Approve transaction |
-| `C` | Change category |
-| `S` | Split transaction |
-| `Q` | Add question |
-
-## CRA Category Codes
-
-The dashboard includes a complete CRA-aligned category system:
-
-- **Income:** T4, T2125, T776, T5, Schedule 3
-- **Expenses:** Lines 8521-9270 (Advertising through Other)
-- **Personal:** Medical, Donations, Tuition, RRSP
-- **Flags:** 50% meal limitation, km log required, mixed-use
-
-## License
-
-MIT © 2024
-
----
-
-## Support
-
-For issues or feature requests, please open a GitHub issue.
